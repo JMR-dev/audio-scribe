@@ -14,6 +14,7 @@ from ccn_transcribe import errors
 from ccn_transcribe.backends import openvino_backend as ovb
 from ccn_transcribe.backends import probe as probe_mod
 from ccn_transcribe.backends.base import TranscribeRequest
+from ccn_transcribe.media import ffmpeg
 
 LIVE = pytest.mark.skipif(
     not os.environ.get("CCN_LIVE"), reason="set CCN_LIVE=1 to run against the real GPU"
@@ -272,8 +273,6 @@ class TestLoadHints:
 @LIVE
 class TestLive:
     def test_real_transcription_on_the_default_device(self, sine_wav: Path) -> None:
-        from ccn_transcribe.media import ffmpeg
-
         backend = ovb.OpenvinoGpuBackend()
         backend.load()
         result = backend.transcribe(ffmpeg.decode_16k_mono(sine_wav), TranscribeRequest())
