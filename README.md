@@ -25,6 +25,7 @@ yt-dlp (aria2c)  ->  ffmpeg  ->  Whisper        ->  txt / srt / vtt / json
 Each video becomes one job directory under `--workdir` (default `transcripts/`):
 
 ```
+transcripts/index.json                    <- which jobs each URL expanded to
 transcripts/jobs/youtube-<id>/
   state.json          media/video.mkv     out/transcript.{txt,srt,vtt,json}
   events.jsonl        media/audio.flac    logs/{job,aria2}.log
@@ -63,6 +64,19 @@ header, so a file truncated to a kilobyte still probes as its full length.
 
 Deleting one subtitle file re-renders it from the segments saved in
 `transcript.json` instead of re-transcribing the whole recording.
+
+`state.json` is a convenience, not a dependency. If it is unreadable the record
+is rebuilt: the job directory is scanned for the video, the FLAC and the written
+outputs, `events.jsonl` supplies *why* an artifact is absent so a deletion you
+asked for is not mistaken for data loss, and `transcript.json` supplies how the
+transcript was produced so a finished job is not transcribed again. Delete it on
+a completed job and the next run still reports "already complete".
+
+`index.json` maps each URL to the jobs it expanded to. Re-running a single video
+is therefore answered from disk with no metadata request at all — it works with
+no network — and a URL that has been seen before still resumes when the source
+has become unreadable, saying so. A playlist is always re-read, since that
+request is the only way to notice videos added to it since the last run.
 
 `--dry-run` prints the plan for every job without touching anything.
 
