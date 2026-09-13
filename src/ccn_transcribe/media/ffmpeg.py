@@ -96,6 +96,17 @@ def probe_duration(path: Path) -> float | None:
     return None
 
 
+# A derived stream this far off its source means the extraction was cut short.
+# The absolute floor covers short clips, where container rounding alone exceeds 0.5%.
+DURATION_TOLERANCE = 0.005
+MIN_TOLERANCE_S = 1.0
+
+
+def durations_match(actual: float, expected: float) -> bool:
+    """Whether a derived stream is as long as the source it came from."""
+    return abs(actual - expected) <= max(MIN_TOLERANCE_S, expected * DURATION_TOLERANCE)
+
+
 def has_audio_stream(path: Path) -> bool:
     try:
         return probe_field(path, "stream=index", "a:0") is not None

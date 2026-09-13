@@ -25,6 +25,15 @@ class TestAria2cArgs:
     def test_stall_abort_can_be_disabled_for_genuinely_slow_links(self) -> None:
         assert "--lowest-speed-limit=0" in opts.aria2c_args(lowest_speed="0")
 
+    def test_checkpoints_progress_often_enough_to_resume(self) -> None:
+        # aria2 saves the control file every 60s by default, so a hard kill in the
+        # first minute leaves a control file recording zero completed pieces and
+        # the "resume" silently re-downloads the lot. Measured: 0/13 pieces.
+        assert "--auto-save-interval=20" in opts.aria2c_args()
+
+    def test_the_checkpoint_interval_is_tunable(self) -> None:
+        assert "--auto-save-interval=5" in opts.aria2c_args(auto_save=5)
+
     def test_raises_the_disk_cache(self) -> None:
         assert "--disk-cache=64M" in opts.aria2c_args()
 

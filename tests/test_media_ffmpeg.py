@@ -170,3 +170,21 @@ class TestPreflight:
         monkeypatch.setattr(subprocess, "run", boom)
         with pytest.raises(errors.PreflightError):
             ffmpeg.has_flac_encoder()
+
+
+class TestDurationsMatch:
+    def test_an_exact_match(self) -> None:
+        assert ffmpeg.durations_match(212.861, 212.861) is True
+
+    def test_within_the_relative_tolerance(self) -> None:
+        assert ffmpeg.durations_match(3600.0, 3610.0) is True
+
+    def test_beyond_the_relative_tolerance(self) -> None:
+        assert ffmpeg.durations_match(3600.0, 3700.0) is False
+
+    def test_short_clips_get_an_absolute_floor(self) -> None:
+        # 0.5% of two seconds is 10ms; rounding in container metadata exceeds that.
+        assert ffmpeg.durations_match(2.0, 2.9) is True
+
+    def test_a_near_empty_extraction_never_matches(self) -> None:
+        assert ffmpeg.durations_match(0.02, 212.861) is False

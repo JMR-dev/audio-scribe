@@ -170,7 +170,11 @@ def _do_audio(job: JobPaths, config: RunConfig, state: JobState, video: Path | N
             hint="Re-run without --force-stage audio, or let the download stage run.",
         )
     state.attempts["audio"] = state.attempts.get("audio", 0) + 1
-    flac = audio_stage.extract(job, video, profile=config.audio_profile)
+    # The video's own probed duration, not state.duration_s: the latter can come
+    # from playlist metadata, and a wrong expectation would reject a good extract.
+    flac = audio_stage.extract(
+        job, video, profile=config.audio_profile, expected_s=state.video.duration_s
+    )
     state.audio = Artifact(
         status=ArtifactStatus.PRESENT,
         path=str(flac.relative_to(job.root)),

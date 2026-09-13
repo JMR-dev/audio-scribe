@@ -78,6 +78,24 @@ class TestAudioStage:
         (job.tmp_dir / "audio.flac").write_bytes(b"junk from a killed run")
         assert audio_stage.extract(job, sine_wav).exists()
 
+    def test_rejects_an_extraction_shorter_than_its_source(
+        self, job: paths.JobPaths, sine_wav: Path
+    ) -> None:
+        # A truncated video yields a fraction of a second of real audio while the
+        # container still claims the full length; without this the pipeline
+        # transcribes near-silence and reports success.
+        with pytest.raises(errors.DecodeError, match="does not match"):
+            audio_stage.extract(job, sine_wav, expected_s=212.861)
+        assert not job.audio_file.exists()
+
+    def test_accepts_an_extraction_matching_its_source(
+        self, job: paths.JobPaths, sine_wav: Path
+    ) -> None:
+        assert audio_stage.extract(job, sine_wav, expected_s=1.0).exists()
+
+    def test_no_expectation_means_no_comparison(self, job: paths.JobPaths, sine_wav: Path) -> None:
+        assert audio_stage.extract(job, sine_wav, expected_s=None).exists()
+
 
 class FakeBackend:
     name: ClassVar[str] = "fake"

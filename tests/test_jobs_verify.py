@@ -112,6 +112,30 @@ class TestVerifyVideo:
         monkeypatch.setattr(ffmpeg, "probe_duration", no_duration)
         assert verify.verify_video(job, _present(dst, job.root), 999_999) is verify.Verdict.CORRUPT
 
+    def test_truncation_is_caught_by_size_even_though_it_probes(
+        self, job: paths.JobPaths, sine_video: Path
+    ) -> None:
+        # Matroska writes the duration in its header, so ffprobe reports the full
+        # length of a file that was cut off after a kilobyte. The recorded size is
+        # the only evidence that the bytes are gone.
+        dst = job.media_dir / "video.mkv"
+        whole = sine_video.read_bytes()
+        dst.write_bytes(whole[:1024])
+        assert ffmpeg.probe_duration(dst) == pytest.approx(1.0, abs=0.2)
+        assert (
+            verify.verify_video(job, _present(dst, job.root), len(whole)) is verify.Verdict.CORRUPT
+        )
+
+    def test_a_whole_file_matching_its_recorded_size_is_ok(
+        self, job: paths.JobPaths, sine_video: Path
+    ) -> None:
+        dst = job.media_dir / "video.mkv"
+        dst.write_bytes(sine_video.read_bytes())
+        assert (
+            verify.verify_video(job, _present(dst, job.root), dst.stat().st_size)
+            is verify.Verdict.OK
+        )
+
 
 class TestVerifyAudio:
     def _flac(self, job: paths.JobPaths, src: Path) -> job_state.Artifact:

@@ -23,9 +23,8 @@ if TYPE_CHECKING:
 
 log = logging.getLogger(__name__)
 
-# A FLAC this far off the video's duration means extraction was cut short.
-_DURATION_TOLERANCE = 0.005
-_MIN_TOLERANCE_S = 1.0
+# Slack for filesystem reporting; the recorded size is the exact byte count.
+_SIZE_SLACK = 4096
 
 
 class Verdict(StrEnum):
@@ -75,12 +74,18 @@ def verify_video(job: JobPaths, artifact: Artifact, declared_size: int | None) -
     if path is None or not path.exists() or path.stat().st_size == 0:
         return Verdict.PARTIAL if _resumable_partial_exists(job) else Verdict.MISSING
 
+    whole = declared_size is None or abs(path.stat().st_size - declared_size) < _SIZE_SLACK
+    if not whole:
+        # Matroska and WebM write the duration into the header, so a file cut off
+        # after a kilobyte still probes as its full length. The size recorded at
+        # download time is the only thing that catches a truncation.
+        return Verdict.CORRUPT
+
     duration = _probe_duration(path)
     if duration is None:
-        # Some mkv/webm muxes declare no duration; fall back to the expected size.
-        if declared_size and abs(path.stat().st_size - declared_size) < 4096:
-            return Verdict.OK
-        return Verdict.CORRUPT
+        # Some mkv/webm muxes declare no duration; the recorded size is then the
+        # only evidence, and it already matched.
+        return Verdict.OK if declared_size else Verdict.CORRUPT
     return Verdict.OK if duration > 0 else Verdict.CORRUPT
 
 
@@ -95,10 +100,8 @@ def verify_audio(job: JobPaths, artifact: Artifact, video_duration: float | None
     duration = _probe_duration(path)
     if duration is None or duration <= 0:
         return Verdict.CORRUPT
-    if video_duration:
-        tolerance = max(_MIN_TOLERANCE_S, video_duration * _DURATION_TOLERANCE)
-        if abs(duration - video_duration) > tolerance:
-            return Verdict.CORRUPT
+    if video_duration and not ffmpeg.durations_match(duration, video_duration):
+        return Verdict.CORRUPT
     return Verdict.OK
 
 

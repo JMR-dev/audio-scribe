@@ -72,6 +72,7 @@ def aria2c_args(
     timeout: int = 30,
     connect_timeout: int = 15,
     retry_wait: int = 3,
+    auto_save: int = 20,
     log_file: Path | None = None,
     extra: Sequence[str] = (),
 ) -> list[str]:
@@ -88,6 +89,10 @@ def aria2c_args(
         # Sixteen writers at out-of-order offsets thrash a 16M cache.
         f"--disk-cache={disk_cache}",
         f"--file-allocation={file_allocation}",
+        # Default 60s. The control file is what a resume reads, so anything not
+        # checkpointed when the process is killed is re-downloaded; a kill in the
+        # first minute otherwise preserves a file recording zero completed pieces.
+        f"--auto-save-interval={auto_save}",
     ]
     if connections != DEFAULT_CONNECTIONS:
         args += [f"-x{connections}", f"-s{connections}"]
