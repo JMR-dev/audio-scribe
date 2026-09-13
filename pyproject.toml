@@ -62,8 +62,15 @@ venv = ".venv"
 strict = true
 files = ["src", "tests"]
 
+[[tool.mypy.overrides]]
+# These ship no py.typed marker.
+module = ["openvino.*", "openvino_genai.*", "huggingface_hub.*", "yt_dlp.*"]
+ignore_missing_imports = true
+
 [tool.pylint.design]
 max-attributes = 15
+# Keyword-only arguments do not carry the readability cost this check guards against.
+max-args = 9
 
 [tool.pylint.main]
 # W0621: pytest fixtures shadow their names by design.
