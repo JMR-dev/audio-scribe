@@ -61,6 +61,8 @@ def to_json(result: TranscriptResult, source: Mapping[str, object] | None = None
         "backend": result.backend,
         "device": result.device,
         "model": {"id": result.model_id, "revision": result.model_revision},
+        "task": result.task,
+        "num_beams": result.num_beams,
         "audio_s": result.audio_s,
         "wall_s": result.wall_s,
         "rtf": result.rtf,

@@ -36,6 +36,8 @@ class TranscriptResult:
     model_revision: str | None
     audio_s: float
     wall_s: float
+    task: str = "transcribe"
+    num_beams: int = 1
 
     @property
     def text(self) -> str:

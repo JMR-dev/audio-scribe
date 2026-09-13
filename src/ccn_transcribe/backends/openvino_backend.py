@@ -206,6 +206,8 @@ class _OpenvinoBackend:
             model_revision=self.revision,
             audio_s=audio_s,
             wall_s=wall,
+            task=request.task,
+            num_beams=request.num_beams,
         )
 
     def close(self) -> None:

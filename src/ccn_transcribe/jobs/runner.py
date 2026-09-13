@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
 from ccn_transcribe import errors
-from ccn_transcribe.jobs import store, verify
+from ccn_transcribe.jobs import recover, store, verify
 from ccn_transcribe.jobs.plan import Stage, Verdicts, plan_stages
 from ccn_transcribe.jobs.state import Artifact, ArtifactStatus, JobState, Outputs
 from ccn_transcribe.jobs.state import TranscriptionRecord as Record
@@ -96,7 +96,7 @@ def run_job(
 ) -> JobOutcome:
     """Run whatever stages this job still needs."""
     job.ensure()
-    state = store.load(job) or JobState.new(job_id=job.root.name, source_url=url)
+    state = store.load(job) or recover.rebuild(job, job_id=job.root.name, source_url=url)
     if entry:
         state.title = entry.get("title") or state.title
         duration = entry.get("duration")
@@ -256,6 +256,8 @@ def _rerender(job: JobPaths, config: RunConfig, state: JobState) -> dict[str, st
         model_revision=record.model_revision,
         audio_s=record.audio_s or 0.0,
         wall_s=record.wall_s or 0.0,
+        task=record.task,
+        num_beams=record.num_beams,
     )
     return outputs_stage.write(job, result, config.formats, source=_source(state))
 
