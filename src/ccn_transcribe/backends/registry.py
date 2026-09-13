@@ -55,6 +55,20 @@ def _select_requested(
     return matches
 
 
+def explain_unavailable(requested: str, chain: tuple[type[Backend], ...] | None = None) -> str:
+    """Why an explicitly requested backend cannot be used."""
+    chain = chain if chain is not None else DEFAULT_CHAIN
+    reasons: list[str] = []
+    for backend in _select_requested(requested, chain):
+        label = key(backend)
+        if not backend.probe_hardware():
+            reasons.append(f"{label}: no {backend.name} hardware detected")
+            continue
+        status = backend.probe_toolchain()
+        reasons.append(f"{label}: {status.reason or 'unavailable'}")
+    return "; ".join(reasons)
+
+
 def candidates(
     requested: str | None = None, chain: tuple[type[Backend], ...] | None = None
 ) -> Iterator[type[Backend]]:
@@ -149,6 +163,13 @@ def transcribe_with_fallback(
             log.warning("backend %s failed (%s); demoting it and falling back", label, exc)
             last = exc
 
+    if explicit and requested is not None and last is None:
+        # Asking for a backend that cannot run is a configuration mistake, not a
+        # per-job failure; say why once and stop rather than repeating it.
+        raise errors.ConfigError(
+            f"--device {requested} was requested but cannot be used",
+            hint=explain_unavailable(requested, chain),
+        )
     raise errors.TranscribeError(
         "no usable backend remains",
         hint=str(last) if last else "Run `ccn-transcribe doctor` to see what was detected.",

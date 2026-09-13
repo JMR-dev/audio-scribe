@@ -225,3 +225,31 @@ class TestRealChain:
             sys.modules.pop(module, None)
         list(registry.candidates())
         assert not {"torch", "faster_whisper", "ctranslate2"} & set(sys.modules)
+
+
+class TestExplicitDeviceDiagnostics:
+    def test_requesting_absent_hardware_is_a_config_error(self) -> None:
+        # A device that cannot run is a configuration mistake, not a per-job
+        # failure to repeat once per URL.
+        a = make_backend("a", hardware=False)
+        with pytest.raises(errors.ConfigError, match="cannot be used"):
+            registry.transcribe_with_fallback(PCM, REQ, requested="a", chain=(a,))
+
+    def test_the_hint_says_the_hardware_is_absent(self) -> None:
+        a = make_backend("a", hardware=False)
+        try:
+            registry.transcribe_with_fallback(PCM, REQ, requested="a", chain=(a,))
+        except errors.ConfigError as exc:
+            assert "no a hardware detected" in (exc.hint or "")
+
+    def test_the_hint_relays_a_toolchain_reason(self) -> None:
+        a = make_backend("a", toolchain=ToolchainStatus(ok=False, reason="not implemented"))
+        assert "not implemented" in registry.explain_unavailable("a", (a,))
+
+    def test_a_runtime_failure_still_reports_as_a_transcribe_error(self) -> None:
+        a = make_backend("a", fail_on_transcribe=True)
+        with pytest.raises(errors.TranscribeError):
+            registry.transcribe_with_fallback(PCM, REQ, requested="a", chain=(a,))
+
+    def test_real_nvidia_request_explains_the_absence(self) -> None:
+        assert "no nvidia hardware" in registry.explain_unavailable("nvidia")
