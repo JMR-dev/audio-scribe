@@ -5,6 +5,7 @@ from __future__ import annotations
 import builtins
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
@@ -36,6 +37,12 @@ def _no_binary(monkeypatch: pytest.MonkeyPatch, *names: str) -> None:
         return None if name in names else real(name)
 
     monkeypatch.setattr(shutil, "which", which)
+
+
+def _no_deno(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Hide deno from PATH *and* from the interpreter's own bin directory."""
+    _no_binary(monkeypatch, "deno")
+    monkeypatch.setattr(ytdlp_opts, "bundled", const(None))
 
 
 class TestBinaries:
@@ -88,15 +95,30 @@ class TestFlacEncoder:
 
 
 class TestJsRuntime:
-    def test_no_runtime_at_all_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_the_bundled_deno_is_found_when_it_is_not_on_path(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        # Installed as a tool, the environment's bin/ is not on PATH. Before this
+        # was resolved directly, doctor reported the machine had no deno at all.
         _no_binary(monkeypatch, "deno")
+        deno = tmp_path / "bin/deno"
+        deno.parent.mkdir(parents=True)
+        deno.write_text("#!/bin/sh\n")
+        deno.chmod(0o755)
+        monkeypatch.setattr(sys, "prefix", str(tmp_path))
+        check = doctor.check_js_runtime()
+        assert check.status is doctor.Status.PASS
+        assert str(deno) in check.detail
+
+    def test_no_runtime_at_all_fails(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        _no_deno(monkeypatch)
         monkeypatch.setattr(ytdlp_opts, "find_node", const(None))
         check = doctor.check_js_runtime()
         assert check.status is doctor.Status.FAIL
         assert "YouTube" in (check.hint or "")
 
     def test_nvm_only_node_warns_about_cron(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        _no_binary(monkeypatch, "deno")
+        _no_deno(monkeypatch)
         monkeypatch.setattr(
             ytdlp_opts, "find_node", const("/home/u/.nvm/versions/node/v24/bin/node")
         )
@@ -105,7 +127,7 @@ class TestJsRuntime:
         assert "cron" in (check.hint or "")
 
     def test_system_node_passes(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        _no_binary(monkeypatch, "deno")
+        _no_deno(monkeypatch)
         monkeypatch.setattr(ytdlp_opts, "find_node", const("/usr/bin/node"))
         assert doctor.check_js_runtime().status is doctor.Status.PASS
 

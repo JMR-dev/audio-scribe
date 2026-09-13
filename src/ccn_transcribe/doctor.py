@@ -67,7 +67,7 @@ def check_flac_encoder() -> Check:
 
 def check_js_runtime() -> Check:
     """YouTube needs one for signature challenges; yt-dlp defaults to deno only."""
-    deno = shutil.which("deno")
+    deno = ytdlp_opts.find_runtime("deno")
     if deno:
         return Check("JS runtime", Status.PASS, f"deno at {deno}")
     node = ytdlp_opts.find_node()

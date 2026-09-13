@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import shutil
+import sys
 from typing import TYPE_CHECKING
 
 import pytest
@@ -178,6 +179,73 @@ class TestJsRuntime:
 
     def test_the_runtime_is_wired_into_ydl_opts(self) -> None:
         assert "js_runtimes" in opts.ydl_opts("x")
+
+
+class TestBundledRuntime:
+    def _exe(self, prefix: Path, name: str) -> Path:
+        binary = prefix / "bin" / name
+        binary.parent.mkdir(parents=True, exist_ok=True)
+        binary.write_text("#!/bin/sh\n")
+        binary.chmod(0o755)
+        return binary
+
+    def test_finds_an_executable_beside_the_interpreter(self, tmp_path: Path) -> None:
+        # The deno extra installs here. When the package is installed as a tool
+        # this directory is not on PATH -- only the console script is exposed.
+        deno = self._exe(tmp_path, "deno")
+        assert opts.bundled("deno", tmp_path) == str(deno)
+
+    def test_absent_is_none(self, tmp_path: Path) -> None:
+        assert opts.bundled("deno", tmp_path) is None
+
+    def test_a_non_executable_does_not_count(self, tmp_path: Path) -> None:
+        binary = tmp_path / "bin" / "deno"
+        binary.parent.mkdir(parents=True)
+        binary.write_text("not executable")
+        binary.chmod(0o644)
+        assert opts.bundled("deno", tmp_path) is None
+
+    def test_bundled_beats_path(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        deno = self._exe(tmp_path, "deno")
+
+        def on_path(_n: str, _mode: int = 0, _path: str | None = None) -> str:
+            return "/usr/bin/deno"
+
+        monkeypatch.setattr(shutil, "which", on_path)
+        monkeypatch.setattr(sys, "prefix", str(tmp_path))
+        assert opts.find_runtime("deno") == str(deno)
+
+    def test_falls_back_to_path(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+        def on_path(_n: str, _mode: int = 0, _path: str | None = None) -> str:
+            return "/usr/bin/deno"
+
+        monkeypatch.setattr(shutil, "which", on_path)
+        monkeypatch.setattr(sys, "prefix", str(tmp_path))
+        assert opts.find_runtime("deno") == "/usr/bin/deno"
+
+    def test_node_keeps_its_nvm_search(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        def found(_h: Path | None = None) -> str:
+            return "/nvm/node"
+
+        monkeypatch.setattr(opts, "find_node", found)
+        assert opts.find_runtime("node") == "/nvm/node"
+
+    def test_the_spec_carries_the_resolved_path(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        deno = self._exe(tmp_path, "deno")
+        monkeypatch.setattr(sys, "prefix", str(tmp_path))
+        assert opts.js_runtime_spec() == {"deno": {"path": str(deno)}}
+
+    def test_the_spec_omits_the_path_when_nothing_is_found(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        def absent(_n: str, _mode: int = 0, _path: str | None = None) -> str | None:
+            return None
+
+        monkeypatch.setattr(shutil, "which", absent)
+        monkeypatch.setattr(sys, "prefix", str(tmp_path))
+        assert opts.js_runtime_spec() == {"deno": {}}
 
 
 def test_nvm_only_node_is_flagged_as_invisible_to_cron(tmp_path: Path) -> None:

@@ -11,7 +11,9 @@ those defaults, and aria2 takes the last occurrence, so ours win.
 
 from __future__ import annotations
 
+import os
 import shutil
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -117,11 +119,30 @@ def find_node(home: Path | None = None) -> str | None:
     return str(candidates[-1]) if candidates else None
 
 
+def bundled(name: str, prefix: str | Path | None = None) -> str | None:
+    """An executable installed alongside the running interpreter.
+
+    The deno extra puts its binary in this environment's bin directory, which is
+    *not* on PATH once the package is installed as a tool -- only the console
+    script is exposed. Looking here before PATH is what makes depending on the
+    extra actually self-sufficient, outside the project checkout and under cron.
+    """
+    candidate = Path(prefix if prefix is not None else sys.prefix) / "bin" / name
+    return str(candidate) if os.access(candidate, os.X_OK) and candidate.is_file() else None
+
+
+def find_runtime(name: str) -> str | None:
+    """Where this JS runtime lives, preferring the one we shipped with."""
+    if name == "node":
+        return find_node()
+    return bundled(name) or shutil.which(name)
+
+
 def js_runtime_spec(preferred: str | None = None) -> dict[str, dict[str, Any]]:
     """YouTube needs a JS runtime for signature challenges.
 
-    yt-dlp defaults to deno only, and the ``deno`` extra installs that binary into
-    the venv, so this works under cron with no PATH setup.
+    yt-dlp defaults to deno and resolves it on PATH. Passing the absolute path
+    instead is what keeps extraction working wherever the package is installed.
     """
     name = preferred or "deno"
     if name not in JS_RUNTIMES:
@@ -129,10 +150,8 @@ def js_runtime_spec(preferred: str | None = None) -> dict[str, dict[str, Any]]:
             f"unknown JS runtime {name!r}",
             hint=f"Choose one of: {', '.join(JS_RUNTIMES)}",
         )
-    if name == "node":
-        node = find_node()
-        return {"node": {"path": node} if node else {}}
-    return {name: {}}
+    found = find_runtime(name)
+    return {name: {"path": found} if found else {}}
 
 
 @dataclass(frozen=True, slots=True)
