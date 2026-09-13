@@ -71,6 +71,8 @@ ignore_missing_imports = true
 max-attributes = 15
 # Keyword-only arguments do not carry the readability cost this check guards against.
 max-args = 9
+# Pipeline entry points carry injectable seams for testing.
+max-locals = 18
 
 [tool.pylint.main]
 # W0621: pytest fixtures shadow their names by design.
