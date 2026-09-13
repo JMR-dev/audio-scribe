@@ -88,7 +88,7 @@ class TestResolveModel:
         def boom(*_a: object, **_k: object) -> None:
             raise OSError("no such model")
 
-        monkeypatch.setattr(ovb, "_snapshot", boom)
+        monkeypatch.setattr(ovb, "snapshot", boom)
         with pytest.raises(errors.ModelUnavailableError) as caught:
             ovb.resolve_model("nope/nope", None)
         assert "hf download" in (caught.value.hint or "")
@@ -284,13 +284,13 @@ def test_a_cache_miss_falls_through_to_the_network(
 ) -> None:
     calls: list[bool] = []
 
-    def snapshot(_model: str, _revision: str | None, *, local_only: bool) -> str:
+    def fake_snapshot(_model: str, _revision: str | None, *, local_only: bool) -> str:
         calls.append(local_only)
         if local_only:
             raise OSError("not cached")
         return str(tmp_path)
 
-    monkeypatch.setattr(ovb, "_snapshot", snapshot)
+    monkeypatch.setattr(ovb, "snapshot", fake_snapshot)
     with caplog.at_level(logging.INFO):
         assert ovb.resolve_model("some/model", None) == tmp_path
     assert calls == [True, False], "the cache must be consulted before the network"

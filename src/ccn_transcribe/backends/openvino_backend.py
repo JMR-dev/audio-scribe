@@ -62,7 +62,7 @@ def supported_languages(model_dir: Path) -> set[str] | None:
     return set(mapping) if mapping else None
 
 
-def _snapshot(model_id: str, revision: str | None, *, local_only: bool) -> str:
+def snapshot(model_id: str, revision: str | None, *, local_only: bool) -> str:
     """One typed boundary around huggingface_hub, which ships no type information."""
     # Imported lazily so --help and doctor do not pay for it.
     from huggingface_hub import (  # pylint: disable=import-outside-toplevel
@@ -80,7 +80,7 @@ def resolve_model(model_id: str, revision: str | None) -> Path:
     pipeline run fully offline.
     """
     try:
-        cached = _snapshot(model_id, revision, local_only=True)
+        cached = snapshot(model_id, revision, local_only=True)
     except Exception:  # pylint: disable=broad-exception-caught
         # Any failure here just means "not in the cache"; fall through to the network.
         log.info("%s is not cached; downloading (~790 MB for the default)", model_id)
@@ -88,7 +88,7 @@ def resolve_model(model_id: str, revision: str | None) -> Path:
         return Path(cached)
 
     try:
-        fetched = _snapshot(model_id, revision, local_only=False)
+        fetched = snapshot(model_id, revision, local_only=False)
     except Exception as exc:  # pylint: disable=broad-exception-caught
         raise errors.ModelUnavailableError(
             f"could not obtain model {model_id}",
