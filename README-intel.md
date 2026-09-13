@@ -129,6 +129,11 @@ Measured on Iris Xe (80 EU) + i5-1145G7, `large-v3-turbo-int8`, 121 s of audio:
 | GPU | ~23 s | ~5.2x | ~24 s | 1.0 |
 | CPU | ~39 s | ~3.1x | ~147 s | 3.8 |
 
+> These are a point-in-time measurement. Re-running `scripts/bench.py GPU sample.wav`
+> on the same box in September 2026 gave 29-32 s (~4.0x) rather than 23 s, with the
+> GPU/CPU ratio unchanged. Treat the ratio as the durable result and re-measure the
+> absolute numbers on your own machine before calling a slower run a regression.
+
 The iGPU is ~1.7x faster and uses ~6x less CPU time. Note it still occupies **one
 full core** — the plugin busy-waits — so the offload is 3.8 cores down to 1.0, not
 to zero. Budget for that if transcription runs alongside other CPU work.

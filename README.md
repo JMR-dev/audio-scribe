@@ -47,9 +47,19 @@ stage whose output does not check out.
 | ok | — | — | nothing |
 
 Killing a run mid-download resumes rather than restarting, because yt-dlp keeps
-its `.part` and aria2 keeps its control file. A `.part` **without** that control
-file is treated as unusable and restarted: aria2 writes segments out of order, so
-such a file is sparse with holes rather than a valid prefix.
+its `.part` and aria2 keeps its control file. How much survives depends on the
+checkpoint interval, not on the size of the `.part`: with `--file-allocation=falloc`
+the file is full-size from the first second, and only the pieces recorded in the
+control file are skipped. A `.part` **without** that control file is discarded and
+restarted, because aria2 writes segments out of order, so such a file is sparse
+with holes rather than a valid prefix -- resuming from its length would produce a
+video that stops being the source partway through.
+
+A video that exists but fails verification is unlinked before re-downloading.
+yt-dlp's overwrite default is off, so it would otherwise report the corrupt file
+as "already downloaded" and skip it forever. Verification checks the recorded byte
+count as well as the duration: Matroska and WebM write the duration into the
+header, so a file truncated to a kilobyte still probes as its full length.
 
 Deleting one subtitle file re-renders it from the segments saved in
 `transcript.json` instead of re-transcribing the whole recording.
@@ -110,6 +120,7 @@ this adds is the flags that do:
 | `--lowest-speed-limit=50K` | 0 (off) | without it a wedged connection hangs forever |
 | `--disk-cache=64M` | 16M | sixteen writers at out-of-order offsets thrash a small cache |
 | `--file-allocation=falloc` | none | instant on btrfs/ext4/xfs; avoids fragmenting multi-GB files |
+| `--auto-save-interval=20` | 60 | the control file is what a resume reads; a kill inside the first minute otherwise preserves zero completed pieces |
 | `--log=logs/aria2.log` | none | the console level hides everything, leaving no forensics |
 
 `--continue` is deliberately never passed — see the `.part` note above.
