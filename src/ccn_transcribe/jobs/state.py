@@ -48,7 +48,7 @@ class Outputs:
 
 @dataclass
 class TranscriptionRecord:
-    model_id: str
+    model_id: str | None
     model_revision: str | None
     backend: str
     device: str
@@ -65,7 +65,7 @@ class TranscriptionRecord:
 
 # Changing any of these invalidates an existing transcript. Backend and device are
 # excluded on purpose: falling back from GPU to CPU must not force a re-run.
-_RERUN_FIELDS = ("model_id", "language", "task", "num_beams")
+_RERUN_FIELDS = ("language", "task", "num_beams")
 
 
 @dataclass
@@ -90,6 +90,10 @@ class JobState:
 
     def params_changed(self, wanted: TranscriptionRecord) -> bool:
         if self.transcription is None:
+            return True
+        # model_id of None means "whatever the backend defaults to", which matches
+        # the model actually used; only an explicit pin can disagree.
+        if wanted.model_id is not None and wanted.model_id != self.transcription.model_id:
             return True
         return any(
             getattr(self.transcription, name) != getattr(wanted, name) for name in _RERUN_FIELDS

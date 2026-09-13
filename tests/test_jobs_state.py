@@ -135,3 +135,33 @@ class TestDefaultsFromSparseDocuments:
         assert restored.video.status is job_state.ArtifactStatus.MISSING
         assert restored.audio.status is job_state.ArtifactStatus.MISSING
         assert restored.outputs.status is job_state.ArtifactStatus.MISSING
+
+
+class TestModelComparison:
+    def _record(self, model_id: str | None) -> job_state.TranscriptionRecord:
+        return job_state.TranscriptionRecord(
+            model_id=model_id,
+            model_revision=None,
+            backend="openvino",
+            device="GPU",
+            language="en",
+            task="transcribe",
+            num_beams=1,
+        )
+
+    def test_an_unpinned_model_matches_whatever_ran(self) -> None:
+        # The request carries None; the record carries the resolved id. Comparing
+        # them directly would make every re-run look like a parameter change.
+        job = make()
+        job.transcription = self._record("OpenVINO/whisper-large-v3-turbo-int8-ov")
+        assert job.params_changed(self._record(None)) is False
+
+    def test_an_explicit_pin_that_differs_forces_a_rerun(self) -> None:
+        job = make()
+        job.transcription = self._record("model-a")
+        assert job.params_changed(self._record("model-b")) is True
+
+    def test_an_explicit_pin_that_matches_does_not(self) -> None:
+        job = make()
+        job.transcription = self._record("model-a")
+        assert job.params_changed(self._record("model-a")) is False

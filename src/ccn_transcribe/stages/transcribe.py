@@ -30,7 +30,7 @@ def run(
     requested: str | None = None,
     model_id: str | None = None,
     cache_dir: Path | None = None,
-    chain: tuple[type[Backend], ...] = registry.DEFAULT_CHAIN,
+    chain: tuple[type[Backend], ...] | None = None,
 ) -> TranscriptResult:
     job.ensure()
     pcm = ffmpeg.decode_16k_mono(audio)

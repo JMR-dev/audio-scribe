@@ -56,9 +56,12 @@ def _select_requested(
 
 
 def candidates(
-    requested: str | None = None, chain: tuple[type[Backend], ...] = DEFAULT_CHAIN
+    requested: str | None = None, chain: tuple[type[Backend], ...] | None = None
 ) -> Iterator[type[Backend]]:
     """Backends worth trying, in order."""
+    # Resolved here rather than as a default argument, which would bind the tuple
+    # at import time and make DEFAULT_CHAIN impossible to override.
+    chain = chain if chain is not None else DEFAULT_CHAIN
     explicit = requested is not None and requested != "auto"
     pool = _select_requested(requested, chain) if explicit and requested else chain
 
@@ -116,7 +119,7 @@ def transcribe_with_fallback(
     requested: str | None = None,
     model_id: str | None = None,
     cache_dir: Path | None = None,
-    chain: tuple[type[Backend], ...] = DEFAULT_CHAIN,
+    chain: tuple[type[Backend], ...] | None = None,
 ) -> TranscriptResult:
     """Transcribe, stepping down the chain on any runtime failure.
 
@@ -124,6 +127,7 @@ def transcribe_with_fallback(
     permission problem and an OpenCL JIT failure surface at one of those points,
     never at device enumeration.
     """
+    chain = chain if chain is not None else DEFAULT_CHAIN
     owned = holder or BackendHolder()
     explicit = requested is not None and requested != "auto"
     last: Exception | None = None
