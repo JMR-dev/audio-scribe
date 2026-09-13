@@ -44,8 +44,8 @@ def _resolve(job: JobPaths, artifact: Artifact) -> Path | None:
 
 def _part_files(job: JobPaths) -> Iterator[Path]:
     for directory in (job.media_dir, job.tmp_dir):
-        if directory.is_dir():
-            yield from directory.glob("*.part")
+        # glob yields nothing for a directory that does not exist; no guard needed.
+        yield from directory.glob("*.part")
 
 
 def _resumable_partial_exists(job: JobPaths) -> bool:

@@ -214,6 +214,115 @@ class TestFindVideo:
     def test_none_when_nothing_downloaded(self, job: paths.JobPaths) -> None:
         assert download.find_video(job) is None
 
+    def test_ignores_unmerged_per_format_files(self, job: paths.JobPaths) -> None:
+        # A failed merge leaves video.f251.webm behind; it sorts before video.mkv
+        # and is a single stream, so returning it would transcribe half the source.
+        (job.media_dir / "video.f251.webm").write_bytes(b"audio only")
+        assert download.find_video(job) is None
+
+
+class TestClearStaleParts:
+    def test_removes_a_part_with_no_control_file(self, job: paths.JobPaths) -> None:
+        stale = job.media_dir / "video.mkv.part"
+        stale.write_bytes(b"sparse")
+        assert download.clear_stale_parts(job) == [stale]
+        assert not stale.exists()
+
+    def test_keeps_a_part_that_aria2_can_resume(self, job: paths.JobPaths) -> None:
+        part = job.media_dir / "video.mkv.part"
+        part.write_bytes(b"sparse")
+        (job.media_dir / "video.mkv.part.aria2").write_bytes(b"ctrl")
+        assert download.clear_stale_parts(job) == []
+        assert part.exists()
+
+    def test_sweeps_the_tmp_directory_too(self, job: paths.JobPaths) -> None:
+        stale = job.tmp_dir / "video.mkv.part"
+        stale.write_bytes(b"sparse")
+        assert download.clear_stale_parts(job) == [stale]
+
+    def test_nothing_to_do_is_not_an_error(self, job: paths.JobPaths) -> None:
+        assert download.clear_stale_parts(job) == []
+
+
+class TestDiscardVideo:
+    def test_removes_the_merged_file(self, job: paths.JobPaths) -> None:
+        video = job.media_dir / "video.mkv"
+        video.write_bytes(b"truncated")
+        assert download.discard_video(job) == video
+        assert not video.exists()
+
+    def test_leaves_per_format_files_alone(self, job: paths.JobPaths) -> None:
+        # yt-dlp re-merges complete per-format files without re-downloading them;
+        # deleting them turns a cheap remux into a full re-download.
+        intermediate = job.media_dir / "video.f137.mp4"
+        intermediate.write_bytes(b"video stream")
+        assert download.discard_video(job) is None
+        assert intermediate.exists()
+
+    def test_nothing_to_discard(self, job: paths.JobPaths) -> None:
+        assert download.discard_video(job) is None
+
+
+class TestDownloadClearsStaleState:
+    def test_a_corrupt_video_is_unlinked_before_yt_dlp_runs(self, job: paths.JobPaths) -> None:
+        # yt-dlp's overwrites default is off: it reports an existing target as
+        # "already downloaded" and skips, so a truncated file is never repaired.
+        video = job.media_dir / "video.mkv"
+        video.write_bytes(b"truncated")
+        seen: list[bool] = []
+
+        def on_download(_n: int) -> None:
+            seen.append(video.exists())
+            video.write_bytes(b"complete")
+
+        download.download(job, "u", factory=factory_for(on_download=on_download))
+        assert seen == [False]
+        assert video.read_bytes() == b"complete"
+
+    def test_an_orphan_part_is_unlinked_before_yt_dlp_runs(self, job: paths.JobPaths) -> None:
+        stale = job.media_dir / "video.mkv.part"
+        stale.write_bytes(b"sparse")
+        seen: list[bool] = []
+
+        def on_download(_n: int) -> None:
+            seen.append(stale.exists())
+            (job.media_dir / "video.mkv").write_bytes(b"data")
+
+        download.download(job, "u", factory=factory_for(on_download=on_download))
+        assert seen == [False]
+
+    def test_a_resumable_part_survives(self, job: paths.JobPaths) -> None:
+        part = job.media_dir / "video.mkv.part"
+        part.write_bytes(b"sparse")
+        (job.media_dir / "video.mkv.part.aria2").write_bytes(b"ctrl")
+        seen: list[bool] = []
+
+        def on_download(_n: int) -> None:
+            seen.append(part.exists())
+            (job.media_dir / "video.mkv").write_bytes(b"data")
+
+        download.download(job, "u", factory=factory_for(on_download=on_download))
+        assert seen == [True]
+
+    def test_the_sweep_happens_once_not_per_attempt(self, job: paths.JobPaths) -> None:
+        # aria2 writes its control file during the failed attempt; sweeping again
+        # between retries would delete the very progress the retry exists to keep.
+        part = job.media_dir / "video.mkv.part"
+        calls: list[int] = []
+
+        def on_download(_n: int) -> None:
+            calls.append(len(calls) + 1)
+            if len(calls) < 2:
+                part.write_bytes(b"sparse")
+                raise RuntimeError("aria2c exited with code 5")
+            assert part.exists()
+            (job.media_dir / "video.mkv").write_bytes(b"data")
+
+        download.download(
+            job, "u", factory=factory_for(on_download=on_download), sleep=lambda _s: None
+        )
+        assert len(calls) == 2
+
 
 class TestDownload:
     def _succeed(self, job: paths.JobPaths) -> Any:

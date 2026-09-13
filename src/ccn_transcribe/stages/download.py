@@ -17,7 +17,7 @@ from ccn_transcribe import errors, paths
 from ccn_transcribe.media import ytdlp_opts
 
 if TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Iterator, Sequence
     from pathlib import Path
 
     from ccn_transcribe.paths import JobPaths
@@ -155,11 +155,57 @@ def identify(entry: dict[str, Any], url: str) -> str:
 
 
 def find_video(job: JobPaths) -> Path | None:
-    """The downloaded media file, whatever extension yt-dlp settled on."""
+    """The merged media file, whatever extension yt-dlp settled on.
+
+    Only the file yt-dlp's output template names directly. A failed merge leaves
+    per-format streams like video.f251.webm behind, which sort first and hold one
+    stream each; returning one would silently transcribe half the source.
+    """
     for candidate in sorted(job.media_dir.glob("video.*")):
-        if candidate.suffix not in (".part", ".aria2", ".json", ".ytdl"):
+        if candidate.stem == "video" and candidate.suffix not in (".part", ".aria2", ".ytdl"):
             return candidate
     return None
+
+
+def _part_files(job: JobPaths) -> Iterator[Path]:
+    for directory in (job.media_dir, job.tmp_dir):
+        # glob yields nothing for a directory that does not exist; no guard needed.
+        yield from directory.glob("*.part")
+
+
+def clear_stale_parts(job: JobPaths) -> list[Path]:
+    """Delete .part files that cannot be resumed, and say which.
+
+    aria2 writes its 16 segments out of order, so without the .aria2 control file
+    a .part is a sparse file full of holes rather than a valid prefix. yt-dlp's
+    continuedl would resume from its length and produce a video that plays for a
+    while and then isn't the source any more -- a corrupt transcript, not an error.
+    Re-downloading is the cheaper mistake, so an orphan goes even when the native
+    downloader (which does write sequentially) could have resumed it.
+    """
+    removed: list[Path] = []
+    for part in sorted(_part_files(job)):
+        if part.with_suffix(part.suffix + ".aria2").exists():
+            continue
+        part.unlink()
+        removed.append(part)
+        log.warning("discarded unresumable partial download %s", part.name)
+    return removed
+
+
+def discard_video(job: JobPaths) -> Path | None:
+    """Delete the merged file so yt-dlp will actually fetch it again.
+
+    yt-dlp's overwrites default is off, so it reports an existing target as
+    "already downloaded" and skips it; a truncated video.mkv would otherwise never
+    be repaired. Per-format streams are left alone -- yt-dlp re-merges complete
+    ones without re-downloading, so clearing them is a pessimization.
+    """
+    video = find_video(job)
+    if video is not None:
+        video.unlink()
+        log.info("discarded %s so it can be downloaded again", video.name)
+    return video
 
 
 def download_options(job: JobPaths, config: ytdlp_opts.DownloadConfig) -> dict[str, Any]:
@@ -188,6 +234,10 @@ def download(
     without this loop that stall would become a job failure instead of a resume.
     """
     job.ensure()
+    # Before the loop, not inside it: a failed attempt leaves a .part with a live
+    # control file, which is exactly the progress the next attempt resumes from.
+    clear_stale_parts(job)
+    discard_video(job)
     options = download_options(job, config)
     make = factory or default_factory
 
