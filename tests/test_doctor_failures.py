@@ -8,6 +8,8 @@ import subprocess
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
+import openvino as ov
+
 from ccn_transcribe import doctor
 from ccn_transcribe.backends import probe
 from ccn_transcribe.media import ffmpeg, ytdlp_opts
@@ -62,8 +64,6 @@ class TestOpenvino:
     ) -> None:
         # README section 7: clinfo working while OpenVINO shows only CPU is a
         # plugin problem, not a driver problem.
-        import openvino as ov
-
         class Core:
             available_devices: ClassVar[list[str]] = ["CPU"]
 
