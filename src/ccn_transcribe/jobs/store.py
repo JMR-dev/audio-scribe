@@ -15,6 +15,7 @@ from ccn_transcribe.jobs.state import JobState
 
 if TYPE_CHECKING:
     from collections.abc import Generator
+    from pathlib import Path
 
     from ccn_transcribe.paths import JobPaths
 
@@ -29,25 +30,33 @@ def _fsync_dir(path: os.PathLike[str]) -> None:
         os.close(fd)
 
 
-def save(job: JobPaths, state: JobState) -> None:
-    """Write state.json atomically.
+def write_json(path: Path, doc: Any) -> None:
+    """Write one JSON document atomically.
 
     tmp -> fsync -> replace -> fsync(dir) so an interrupted write can never leave a
     truncated record where a good one used to be.
     """
-    state.touch()
-    job.root.mkdir(parents=True, exist_ok=True)
-    tmp = job.state_file.with_suffix(".json.tmp")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
     with tmp.open("w", encoding="utf-8") as fh:
-        json.dump(state.to_dict(), fh, indent=2, ensure_ascii=False)
+        json.dump(doc, fh, indent=2, ensure_ascii=False)
         fh.flush()
         os.fsync(fh.fileno())
     try:
-        tmp.replace(job.state_file)
+        tmp.replace(path)
     except OSError:
         tmp.unlink(missing_ok=True)
         raise
-    _fsync_dir(job.root)
+    _fsync_dir(path.parent)
+
+
+def read_json(path: Path) -> object:
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save(job: JobPaths, state: JobState) -> None:
+    state.touch()
+    write_json(job.state_file, state.to_dict())
 
 
 def load(job: JobPaths) -> JobState | None:

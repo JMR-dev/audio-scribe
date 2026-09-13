@@ -108,28 +108,125 @@ class TestBatchResult:
 
 
 class TestExpand:
-    def test_a_single_video_is_one_pair(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def _workspace(self, tmp_path: Path) -> paths.Workspace:
+        return paths.Workspace(tmp_path / "transcripts")
+
+    def _extractor(
+        self, monkeypatch: pytest.MonkeyPatch, doc: dict[str, Any], calls: list[int] | None = None
+    ) -> None:
         def info(*_a: object, **_k: object) -> dict[str, Any]:
-            return {"id": "a", "webpage_url": "https://y.test/a"}
+            if calls is not None:
+                calls.append(1)
+            return doc
 
         monkeypatch.setattr(download_stage, "extract_info", info)
-        assert batch.expand("u", RunConfig()) == [
-            ("https://y.test/a", {"id": "a", "webpage_url": "https://y.test/a"})
-        ]
 
-    def test_a_playlist_becomes_many(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        def info(*_a: object, **_k: object) -> dict[str, Any]:
-            return {"entries": [{"id": "a", "url": "u1"}, {"id": "b", "url": "u2"}]}
+    def test_a_single_video_is_one_target(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._extractor(monkeypatch, {"id": "a", "webpage_url": "https://y.test/a"})
+        targets = batch.expand("u", RunConfig(), self._workspace(tmp_path))
+        assert [t.url for t in targets] == ["https://y.test/a"]
+        assert targets[0].entry == {"id": "a", "webpage_url": "https://y.test/a"}
 
-        monkeypatch.setattr(download_stage, "extract_info", info)
-        assert [u for u, _ in batch.expand("u", RunConfig())] == ["u1", "u2"]
+    def test_a_playlist_becomes_many(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        self._extractor(
+            monkeypatch, {"entries": [{"id": "a", "url": "u1"}, {"id": "b", "url": "u2"}]}
+        )
+        targets = batch.expand("u", RunConfig(), self._workspace(tmp_path))
+        assert [t.url for t in targets] == ["u1", "u2"]
 
-    def test_falls_back_to_the_original_url(self, monkeypatch: pytest.MonkeyPatch) -> None:
-        def info(*_a: object, **_k: object) -> dict[str, Any]:
-            return {"id": "a"}
+    def test_falls_back_to_the_original_url(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        self._extractor(monkeypatch, {"id": "a"})
+        assert batch.expand("orig", RunConfig(), self._workspace(tmp_path))[0].url == "orig"
 
-        monkeypatch.setattr(download_stage, "extract_info", info)
-        assert batch.expand("orig", RunConfig())[0][0] == "orig"
+    def test_a_known_single_video_needs_no_metadata_request(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # The whole point of the index: resuming one video is offline and instant.
+        workspace = self._workspace(tmp_path)
+        calls: list[int] = []
+        self._extractor(monkeypatch, {"id": "a", "webpage_url": "https://y.test/a"}, calls)
+        first = batch.expand("u", RunConfig(), workspace)
+        second = batch.expand("u", RunConfig(), workspace)
+        assert len(calls) == 1
+        assert [t.job_id for t in second] == [t.job_id for t in first]
+
+    def test_a_known_playlist_is_still_re_read(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Skipping the request would silently ignore videos added since last time.
+        workspace = self._workspace(tmp_path)
+        calls: list[int] = []
+        self._extractor(
+            monkeypatch, {"entries": [{"id": "a", "url": "u1"}, {"id": "b", "url": "u2"}]}, calls
+        )
+        batch.expand("u", RunConfig(), workspace)
+        batch.expand("u", RunConfig(), workspace)
+        assert len(calls) == 2
+
+    def test_a_dry_run_records_nothing(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        workspace = self._workspace(tmp_path)
+        self._extractor(monkeypatch, {"id": "a", "webpage_url": "https://y.test/a"})
+        batch.expand("u", RunConfig(), workspace, remember=False)
+        assert not workspace.index_file.exists()
+
+    def test_an_unreachable_source_resumes_what_is_recorded(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        workspace = self._workspace(tmp_path)
+        self._extractor(
+            monkeypatch, {"entries": [{"id": "a", "url": "u1"}, {"id": "b", "url": "u2"}]}
+        )
+        batch.expand("u", RunConfig(), workspace)
+
+        def offline(*_a: object, **_k: object) -> dict[str, Any]:
+            raise errors.NetworkError("no route to host")
+
+        monkeypatch.setattr(download_stage, "extract_info", offline)
+        assert [t.url for t in batch.expand("u", RunConfig(), workspace)] == ["u1", "u2"]
+
+    def test_an_unreachable_unknown_source_still_fails(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def offline(*_a: object, **_k: object) -> dict[str, Any]:
+            raise errors.NetworkError("no route to host")
+
+        monkeypatch.setattr(download_stage, "extract_info", offline)
+        with pytest.raises(errors.NetworkError):
+            batch.expand("u", RunConfig(), self._workspace(tmp_path))
+
+    def test_an_unreadable_source_of_any_kind_uses_the_record(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # A dead proxy surfaces as "no metadata", not as a network error, so the
+        # fallback keys on the source being unreadable rather than on which way.
+        workspace = self._workspace(tmp_path)
+        self._extractor(
+            monkeypatch, {"entries": [{"id": "a", "url": "u1"}, {"id": "b", "url": "u2"}]}
+        )
+        batch.expand("u", RunConfig(), workspace)
+
+        def gone(*_a: object, **_k: object) -> dict[str, Any]:
+            raise errors.NotFoundError("no metadata for u")
+
+        monkeypatch.setattr(download_stage, "extract_info", gone)
+        assert [t.url for t in batch.expand("u", RunConfig(), workspace)] == ["u1", "u2"]
+
+    def test_an_unknown_url_is_never_invented(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Nothing recorded means nothing to fall back to, so a typo still fails.
+        def gone(*_a: object, **_k: object) -> dict[str, Any]:
+            raise errors.NotFoundError("no metadata for typo")
+
+        monkeypatch.setattr(download_stage, "extract_info", gone)
+        with pytest.raises(errors.NotFoundError):
+            batch.expand("typo", RunConfig(), self._workspace(tmp_path))
 
 
 class TestRunBatch:

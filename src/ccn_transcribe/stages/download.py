@@ -134,7 +134,12 @@ def extract_info(
     except Exception as exc:  # pylint: disable=broad-exception-caught
         raise classify(str(exc)) from exc
     if info is None:
-        raise errors.NotFoundError(f"no metadata for {url}", hint="Check the URL.")
+        # yt-dlp reported the reason on its own output and handed back nothing, so
+        # the cause is whatever it just printed -- a bad URL, or an unreachable one.
+        raise errors.NotFoundError(
+            f"no metadata for {url}",
+            hint="Check the URL, and the yt-dlp error above for why it could not be read.",
+        )
     return info
 
 

@@ -5,11 +5,12 @@ from __future__ import annotations
 import logging
 import sys
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, TextIO
+from typing import TYPE_CHECKING, TextIO
 
 from ccn_transcribe import errors, logsetup, paths
 from ccn_transcribe.backends.registry import BackendHolder
-from ccn_transcribe.jobs import store
+from ccn_transcribe.jobs import index, store
+from ccn_transcribe.jobs.index import Target
 from ccn_transcribe.jobs.runner import JobOutcome, run_job
 from ccn_transcribe.stages import download as download_stage
 
@@ -92,14 +93,36 @@ def confirm_retention(
         raise errors.ConfigError("aborted at the retention prompt", hint="Drop --no-retain-*.")
 
 
-def expand(url: str, config: RunConfig) -> list[tuple[str, dict[str, Any]]]:
-    """One (url, metadata) pair per video; playlists become many."""
-    info = download_stage.extract_info(url, config.download)
-    pairs: list[tuple[str, dict[str, Any]]] = []
+def expand(
+    url: str, config: RunConfig, workspace: paths.Workspace, *, remember: bool = True
+) -> list[Target]:
+    """One target per video; playlists become many."""
+    playlist = config.download.playlist
+    known = index.lookup(workspace, url, playlist=playlist)
+    # A single video cannot gain entries, so a recorded mapping stays true and the
+    # metadata request is pure cost. A playlist has to be re-read: that request is
+    # the only way to notice videos added to it since the last run.
+    if known is not None and len(known) == 1:
+        return known
+
+    try:
+        info = download_stage.extract_info(url, config.download)
+    except errors.SourceError as exc:
+        # Only a URL we have expanded before can land here, so this cannot invent
+        # work: it lets the jobs already on disk finish when the source has gone
+        # unreadable. Anything still needing a download fails on its own merits.
+        if known is None:
+            raise
+        log.warning("%s could not be read (%s); using the %d recorded job(s)", url, exc, len(known))
+        return known
+
+    targets: list[Target] = []
     for entry in download_stage.entries_for(info):
-        target = entry.get("webpage_url") or entry.get("url") or url
-        pairs.append((str(target), entry))
-    return pairs
+        at = str(entry.get("webpage_url") or entry.get("url") or url)
+        targets.append(Target(job_id=download_stage.identify(entry, at), url=at, entry=entry))
+    if remember:
+        index.record(workspace, url, playlist=playlist, targets=targets)
+    return targets
 
 
 def run_batch(urls: Sequence[str], config: RunConfig, *, dry_run: bool = False) -> BatchResult:
@@ -124,7 +147,8 @@ def _run_one(
     dry_run: bool,
 ) -> None:
     try:
-        pairs = expand(url, config)
+        # A dry run reports the plan without touching anything, the index included.
+        targets = expand(url, config, workspace, remember=not dry_run)
     except errors.FatalError:
         raise
     except errors.CcnError as exc:
@@ -132,16 +156,20 @@ def _run_one(
         result.outcomes.append(JobOutcome(url, url, (), ok=False, error=str(exc)))
         return
 
-    for target, entry in pairs:
-        job = workspace.job(download_stage.identify(entry, target))
+    for target in targets:
+        job = workspace.job(target.job_id)
         try:
             with store.job_lock(job), logsetup.job_log(job):
                 result.outcomes.append(
-                    run_job(job, target, config, entry=entry, holder=holder, dry_run=dry_run)
+                    run_job(
+                        job, target.url, config, entry=target.entry, holder=holder, dry_run=dry_run
+                    )
                 )
         except errors.FatalError:
             raise
         except errors.CcnError as exc:
             # One bad job must never take the batch down with it.
             log.error("%s: %s", job.root.name, exc)
-            result.outcomes.append(JobOutcome(job.root.name, target, (), ok=False, error=str(exc)))
+            result.outcomes.append(
+                JobOutcome(job.root.name, target.url, (), ok=False, error=str(exc))
+            )

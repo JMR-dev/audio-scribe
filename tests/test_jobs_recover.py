@@ -8,6 +8,7 @@ import pytest
 from ccn_transcribe import paths
 from ccn_transcribe.jobs import recover, store
 from ccn_transcribe.jobs.state import ArtifactStatus
+from ccn_transcribe.media import ffmpeg
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -63,8 +64,6 @@ class TestRebuildFromArtifacts:
         assert state.video.status is ArtifactStatus.MISSING
 
     def test_extracted_audio_is_found(self, job: paths.JobPaths, sine_wav: Path) -> None:
-        from ccn_transcribe.media import ffmpeg
-
         ffmpeg.extract_flac(sine_wav, job.audio_file)
         state = recover.rebuild(job, job_id="youtube-abc", source_url="u")
         assert state.audio.status is ArtifactStatus.PRESENT

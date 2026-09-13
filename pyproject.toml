@@ -70,7 +70,7 @@ ignore_missing_imports = true
 [tool.pylint.design]
 max-attributes = 20
 # Keyword-only arguments do not carry the readability cost this check guards against.
-max-args = 9
+max-args = 10
 # Pipeline entry points carry injectable seams for testing.
 max-locals = 18
 
