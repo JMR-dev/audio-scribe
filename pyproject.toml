@@ -41,10 +41,16 @@ src = ["src", "tests"]
 extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "PTH", "RET", "ARG", "TID", "TC", "RUF"]
+select = ["E", "F", "W", "I", "N", "UP", "B", "A", "C4", "SIM", "PTH", "RET", "ARG", "TID", "TC", "RUF", "S"]
+# S607: binaries are looked up on PATH on purpose and preflight-checked with
+# shutil.which; hardcoding absolute paths would be less portable, not safer.
+ignore = ["S607"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ARG001", "ARG002"]
+# S101: asserts are the point of a test file.
+"tests/*" = ["ARG001", "ARG002", "S101"]
+# Throwaway benchmarks, not pipeline code.
+"scripts/*" = ["S603"]
 
 [tool.pyright]
 include = ["src", "tests"]

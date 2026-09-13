@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 
 def _run(args: list[str]) -> None:
-    subprocess.run(args, capture_output=True, check=True)
+    subprocess.run(args, capture_output=True, check=True)  # noqa: S603
 
 
 @pytest.fixture(scope="session")

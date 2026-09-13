@@ -35,7 +35,8 @@ REQUIRED_BINARIES = ("ffmpeg", "ffprobe")
 
 def _run(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[bytes]:
     try:
-        return subprocess.run(args, capture_output=True, check=check)
+        # Argument lists are built here from fixed templates; never a shell string.
+        return subprocess.run(args, capture_output=True, check=check)  # noqa: S603
     except FileNotFoundError as exc:
         raise errors.PreflightError(
             f"{args[0]} is not installed or not on PATH",
