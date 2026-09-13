@@ -1,0 +1,10 @@
+# Python environment
+.venv/
+__pycache__/
+*.py[cod]
+
+# OpenVINO compiled-kernel caches (scripts create .ov_cache_gpu / .ov_cache_cpu)
+.ov_cache*/
+
+# Test audio fixtures - fetched by scripts, not committed
+*.wav
