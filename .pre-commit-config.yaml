@@ -1,0 +1,76 @@
+# Fast gates run on commit; slow whole-project gates run on push.
+# Install all three stages:
+#   pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type commit-msg
+default_install_hook_types: [pre-commit, pre-push, commit-msg]
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-yaml
+      - id: check-toml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: [--maxkb=512]
+
+  - repo: https://github.com/compilerla/conventional-pre-commit
+    rev: v4.2.0
+    hooks:
+      - id: conventional-pre-commit
+        stages: [commit-msg]
+
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff (lint)
+        entry: uv run --locked ruff check --fix --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      - id: ruff-format
+        name: ruff (format)
+        entry: uv run --locked ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        require_serial: true
+
+      # pass_filenames: a type error can surface in an unchanged file because of a
+      # changed one, so pyright must always see the whole project.
+      - id: pyright
+        name: pyright (types)
+        entry: uv run --locked pyright
+        language: system
+        types_or: [python, pyi]
+        pass_filenames: false
+        require_serial: true
+
+      # always_run + pass_filenames=false: pytest must never receive staged source
+      # files as arguments, and the 100% gate is only meaningful on the full suite.
+      - id: pytest-cov
+        name: pytest (100% coverage gate)
+        entry: uv run --locked pytest --cov --cov-fail-under=100
+        language: system
+        always_run: true
+        pass_filenames: false
+        require_serial: true
+
+      - id: pylint
+        name: pylint (design checks)
+        entry: uv run --locked pylint src tests
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-push]
+
+      - id: mypy
+        name: mypy (strict)
+        entry: uv run --locked mypy
+        language: system
+        types: [python]
+        pass_filenames: false
+        require_serial: true
+        stages: [pre-push]

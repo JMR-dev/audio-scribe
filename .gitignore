@@ -8,3 +8,12 @@ __pycache__/
 
 # Test audio fixtures - fetched by scripts, not committed
 *.wav
+
+# Pipeline working directories
+transcripts/
+out/
+
+# Coverage
+.coverage
+htmlcov/
+.pytest_cache/
