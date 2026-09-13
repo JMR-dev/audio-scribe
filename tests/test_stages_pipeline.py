@@ -199,3 +199,74 @@ class TestOutputsStage:
         )
         outputs_stage.write(job, shorter, ("txt",))
         assert job.transcript_file("txt").read_text().strip() == "hi"
+
+
+class TestPublish:
+    def test_does_nothing_without_an_out_dir(self, job: paths.JobPaths) -> None:
+        written = outputs_stage.write(job, RESULT, ("txt",))
+        assert outputs_stage.publish(job, written, ("txt",), out_dir=None, title="T") == []
+
+    def test_copies_requested_formats_named_by_title(
+        self, job: paths.JobPaths, tmp_path: Path
+    ) -> None:
+        written = outputs_stage.write(job, RESULT, ("txt", "srt"))
+        collected = tmp_path / "collected"
+        got = outputs_stage.publish(
+            job, written, ("txt", "srt"), out_dir=collected, title="My Talk"
+        )
+        assert {p.name for p in got} == {
+            "My_Talk-youtube-abc.txt",
+            "My_Talk-youtube-abc.srt",
+        }
+        assert all(p.read_text() for p in got)
+
+    def test_the_job_directory_is_left_canonical(self, job: paths.JobPaths, tmp_path: Path) -> None:
+        # Resume depends on the job dir, so publishing copies rather than moves.
+        written = outputs_stage.write(job, RESULT, ("txt",))
+        outputs_stage.publish(job, written, ("txt",), out_dir=tmp_path / "c", title="T")
+        assert job.transcript_file("txt").exists()
+
+    def test_only_requested_formats_are_collected(
+        self, job: paths.JobPaths, tmp_path: Path
+    ) -> None:
+        # json is always written as the segment cache, but need not be collected.
+        written = outputs_stage.write(job, RESULT, ("txt",))
+        collected = tmp_path / "collected"
+        got = outputs_stage.publish(job, written, ("txt",), out_dir=collected, title="T")
+        assert [p.suffix for p in got] == [".txt"]
+
+    def test_a_missing_format_is_skipped(self, job: paths.JobPaths, tmp_path: Path) -> None:
+        written = outputs_stage.write(job, RESULT, ("txt",))
+        got = outputs_stage.publish(job, written, ("txt", "srt"), out_dir=tmp_path / "c", title="T")
+        assert len(got) == 1
+
+    def test_creates_the_directory(self, job: paths.JobPaths, tmp_path: Path) -> None:
+        written = outputs_stage.write(job, RESULT, ("txt",))
+        target = tmp_path / "deep" / "nested"
+        outputs_stage.publish(job, written, ("txt",), out_dir=target, title="T")
+        assert target.is_dir()
+
+
+class TestOutputStem:
+    def test_combines_title_and_id(self) -> None:
+        assert paths.output_stem("My Talk", "youtube-abc") == "My_Talk-youtube-abc"
+
+    def test_strips_path_separators(self) -> None:
+        assert "/" not in paths.output_stem("a/b", "j")
+
+    def test_collapses_runs_of_underscores(self) -> None:
+        assert paths.output_stem("a   b", "j") == "a_b-j"
+
+    def test_falls_back_to_the_id_when_there_is_no_title(self) -> None:
+        assert paths.output_stem(None, "youtube-abc") == "youtube-abc"
+
+    def test_falls_back_when_the_title_is_all_punctuation(self) -> None:
+        assert paths.output_stem("///", "youtube-abc") == "youtube-abc"
+
+    def test_truncates_a_very_long_title(self) -> None:
+        assert len(paths.output_stem("z" * 300, "j")) < 120
+
+
+def test_publish_with_nothing_to_copy_returns_empty(job: paths.JobPaths, tmp_path: Path) -> None:
+    written = outputs_stage.write(job, RESULT, ("txt",))
+    assert outputs_stage.publish(job, written, ("srt",), out_dir=tmp_path / "c", title="T") == []

@@ -4,12 +4,15 @@ from __future__ import annotations
 
 import logging
 import os
+import shutil
 from typing import TYPE_CHECKING
 
 from ccn_transcribe import formats
+from ccn_transcribe.paths import output_stem
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
+    from pathlib import Path
 
     from ccn_transcribe.paths import JobPaths
     from ccn_transcribe.transcript import TranscriptResult
@@ -54,3 +57,33 @@ def write(
         written[name] = str(path.relative_to(job.root))
     log.info("wrote %s", ", ".join(sorted(written)))
     return written
+
+
+def publish(
+    job: JobPaths,
+    written: Mapping[str, str],
+    wanted: Sequence[str],
+    *,
+    out_dir: Path | None,
+    title: str | None,
+) -> list[Path]:
+    """Additionally collect transcripts into one folder, named by title.
+
+    The job directory stays canonical -- resume depends on it -- so this only
+    copies, and only the formats the user actually asked for.
+    """
+    if out_dir is None:
+        return []
+    out_dir.mkdir(parents=True, exist_ok=True)
+    stem = output_stem(title, job.root.name)
+    copied: list[Path] = []
+    for name in wanted:
+        relative = written.get(name)
+        if relative is None:
+            continue
+        destination = out_dir / f"{stem}.{name}"
+        shutil.copy2(job.root / relative, destination)
+        copied.append(destination)
+    if copied:
+        log.info("collected %d file(s) into %s", len(copied), out_dir)
+    return copied

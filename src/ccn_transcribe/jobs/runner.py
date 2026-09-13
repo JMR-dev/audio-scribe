@@ -228,6 +228,7 @@ def _do_transcript(
 
     state.outputs = Outputs(status=ArtifactStatus.PRESENT, paths=written)
     store.save(job, state)
+    outputs_stage.publish(job, written, config.formats, out_dir=config.out_dir, title=state.title)
     if config.no_retain_audio:
         _record_deletion(job, state, "audio", "--no-retain-audio", job.audio_file)
 

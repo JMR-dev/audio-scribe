@@ -50,6 +50,13 @@ def url_job_id(url: str) -> str:
     return f"url-{hashlib.sha256(normalize_url(url).encode()).hexdigest()[:16]}"
 
 
+def output_stem(title: str | None, identifier: str) -> str:
+    """A readable, filesystem-safe basename for a collected transcript."""
+    cleaned = _UNSAFE.sub("_", (title or "").strip()).strip("_.")
+    cleaned = re.sub(r"_{2,}", "_", cleaned)[:80].strip("_.")
+    return f"{cleaned}-{identifier}" if cleaned else identifier
+
+
 @dataclass(frozen=True, slots=True)
 class JobPaths:
     root: Path
