@@ -161,6 +161,31 @@ the retry loop lives here instead.
 yt-dlp defaults to deno only, and installing it as a dependency means it works
 under cron without any PATH setup.
 
+## Installing
+
+Either route puts `ccn-transcribe` on your PATH; `ccn-transcribe doctor` tells you
+whether the machine can actually run it.
+
+**As a tool** (needs uv; tracks nothing but what it installed):
+
+```bash
+uv tool install .          # then: ccn-transcribe doctor
+uv tool install . --reinstall     # pick up later commits
+uv tool install . --editable      # or track the checkout instead
+```
+
+**As a self-contained directory** (needs neither Python nor uv at runtime):
+
+```bash
+scripts/build-binary.sh    # then: dist/ccn-transcribe/ccn-transcribe doctor
+```
+
+~450 MB, most of it OpenVINO and its 47 runtime-loaded plugins. It is `onedir`
+rather than `onefile` on purpose: `onefile` extracts the whole bundle to `/tmp`
+on every launch. Move or copy the whole `ccn-transcribe/` directory, not just
+the executable inside it. `ffmpeg`, `ffprobe` and `aria2c` are still expected on
+the system either way — they are not bundled.
+
 ## Development
 
 ```bash

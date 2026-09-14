@@ -21,3 +21,7 @@ htmlcov/
 # Tool caches
 .mypy_cache/
 .ruff_cache/
+
+# PyInstaller output
+/dist/
+/build/
