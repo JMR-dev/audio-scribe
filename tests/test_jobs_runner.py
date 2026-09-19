@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import replace
-from typing import TYPE_CHECKING, ClassVar
+from typing import TYPE_CHECKING, Any, ClassVar
 
 import pytest
 
@@ -15,6 +15,8 @@ from audio_scribe.jobs.plan import Stage, Verdicts
 from audio_scribe.jobs.state import Artifact, ArtifactStatus, JobState
 from audio_scribe.jobs.verify import Verdict
 from audio_scribe.stages import download as download_stage
+from audio_scribe.stages import outputs as outputs_stage
+from audio_scribe.stages import transcribe as transcribe_stage
 from audio_scribe.transcript import Segment, TranscriptResult
 
 if TYPE_CHECKING:
@@ -161,12 +163,87 @@ class TestResume:
 
 
 class TestRetention:
-    def test_video_is_deleted_only_after_the_flac_is_committed(
+    def test_no_retain_video_removes_the_video_and_keeps_the_flac(
         self, seeded: paths.JobPaths, config: RunConfig
     ) -> None:
         runner.run_job(seeded, "https://y.test/x", replace(config, no_retain_video=True))
         assert download_stage.find_video(seeded) is None
         assert seeded.audio_file.exists()
+
+    def test_nothing_is_deleted_until_the_outputs_are_published(
+        self, seeded: paths.JobPaths, config: RunConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        # Publishing is the last real stage; both flags must wait for it.
+        on_disk_at_publish: list[tuple[bool, bool]] = []
+        real_publish = outputs_stage.publish
+
+        def spy(*args: Any, **kwargs: Any) -> list[Path]:
+            on_disk_at_publish.append(
+                (download_stage.find_video(seeded) is not None, seeded.audio_file.exists())
+            )
+            return real_publish(*args, **kwargs)
+
+        monkeypatch.setattr(outputs_stage, "publish", spy)
+        both = replace(config, no_retain_video=True, no_retain_audio=True)
+        runner.run_job(seeded, "https://y.test/x", both)
+        assert on_disk_at_publish == [(True, True)]
+        assert download_stage.find_video(seeded) is None
+        assert not seeded.audio_file.exists()
+
+    def test_a_failed_transcription_keeps_the_media(
+        self, seeded: paths.JobPaths, config: RunConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        def boom(*_a: object, **_k: object) -> None:
+            raise errors.TranscribeError("the backend fell over")
+
+        monkeypatch.setattr(transcribe_stage, "run", boom)
+        both = replace(config, no_retain_video=True, no_retain_audio=True)
+        outcome = runner.run_job(seeded, "https://y.test/x", both)
+        assert outcome.ok is False
+        assert download_stage.find_video(seeded) is not None
+        assert seeded.audio_file.exists()
+        state = store.load(seeded)
+        assert state is not None
+        assert state.video.status is ArtifactStatus.PRESENT
+        assert state.audio.status is ArtifactStatus.PRESENT
+        assert store.read_events(seeded) == []
+
+    def test_the_resume_after_a_failure_does_the_cleanup(
+        self, seeded: paths.JobPaths, config: RunConfig, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        real_run = transcribe_stage.run
+
+        def boom(*_a: object, **_k: object) -> None:
+            raise errors.TranscribeError("the backend fell over")
+
+        both = replace(config, no_retain_video=True, no_retain_audio=True)
+        monkeypatch.setattr(transcribe_stage, "run", boom)
+        runner.run_job(seeded, "https://y.test/x", both)
+
+        monkeypatch.setattr(transcribe_stage, "run", real_run)
+        outcome = runner.run_job(seeded, "https://y.test/x", both)
+        assert outcome.stages == (Stage.TRANSCRIBE, Stage.OUTPUTS)
+        assert download_stage.find_video(seeded) is None
+        assert not seeded.audio_file.exists()
+
+    def test_a_dry_run_deletes_nothing(self, seeded: paths.JobPaths, config: RunConfig) -> None:
+        runner.run_job(seeded, "https://y.test/x", config)
+        seeded.transcript_file("srt").unlink()
+        both = replace(config, no_retain_video=True, no_retain_audio=True)
+        runner.run_job(seeded, "https://y.test/x", both, dry_run=True)
+        assert download_stage.find_video(seeded) is not None
+        assert seeded.audio_file.exists()
+
+    def test_re_rendering_does_not_record_a_second_deletion(
+        self, seeded: paths.JobPaths, config: RunConfig
+    ) -> None:
+        both = replace(config, no_retain_video=True, no_retain_audio=True)
+        runner.run_job(seeded, "https://y.test/x", both)
+        seeded.transcript_file("srt").unlink()
+        outcome = runner.run_job(seeded, "https://y.test/x", both)
+        assert outcome.stages == (Stage.OUTPUTS,)
+        deleted = [e["artifact"] for e in store.read_events(seeded) if e["event"] == "deleted"]
+        assert sorted(deleted) == ["audio", "video"]
 
     def test_the_deletion_is_recorded_as_policy_not_loss(
         self, seeded: paths.JobPaths, config: RunConfig

@@ -82,8 +82,8 @@ def confirm_retention(
     out.write(
         "\nWARNING  source media will be deleted after each job completes:\n"
         f"    {config.retention_summary()}\n\n"
-        "  Interrupting a run is safe: media is removed only once the next stage\n"
-        "  is committed, so resume always works.\n\n"
+        "  Interrupting a run is safe: media is removed only after every stage of\n"
+        "  a job has finished, so resume always works.\n\n"
         "  What you lose is re-run flexibility. Re-transcribing later with a\n"
         "  different --language / --model / --task will need another download.\n\n"
         "Continue? [y/N] "

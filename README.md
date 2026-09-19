@@ -86,14 +86,15 @@ Video and audio are kept by default.
 
 | Flag | Effect |
 |---|---|
-| `--no-retain-video` | delete the video once the FLAC is extracted and verified |
-| `--no-retain-audio` | delete the FLAC once every output is written |
+| `--no-retain-video` | delete the video once the job is complete |
+| `--no-retain-audio` | delete the FLAC once the job is complete |
 | `--no-retain` | both |
 
-Deletion always happens **after** the next stage is committed, so interrupting a
-run is still safe and resume still works. What you actually give up is re-run
-flexibility: re-transcribing later with a different `--language`, `--model` or
-`--task` will need another download.
+These are cleanup flags: deletion is the very last step of a job, after every
+stage has finished and the outputs are published. A job that fails or is
+interrupted keeps its media, so resume still works. What you actually give up is
+re-run flexibility: re-transcribing later with a different `--language`, `--model`
+or `--task` will need another download.
 
 These flags prompt once per run. On a non-TTY they refuse outright rather than
 proceeding — a piped or cron invocation should never delete gigabytes with nobody

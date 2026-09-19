@@ -43,10 +43,10 @@ class RunConfig:
     def retention_summary(self) -> str:
         parts: list[str] = []
         if self.no_retain_video:
-            parts.append("video after the FLAC is extracted and verified")
+            parts.append("the video")
         if self.no_retain_audio:
-            parts.append("audio after all transcript outputs are written")
-        return "; ".join(parts)
+            parts.append("the audio (FLAC)")
+        return " and ".join(parts)
 
     def request(self) -> TranscribeRequest:
         from audio_scribe.backends.base import (  # pylint: disable=import-outside-toplevel

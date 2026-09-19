@@ -146,6 +146,22 @@ def _execute(
     # need_outputs is the root condition in plan_stages, so every non-empty plan
     # ends in OUTPUTS and this always has work to do.
     _do_transcript(job, config, state, stages=stages, holder=holder)
+    # Cleanup is last: a failure in any stage above skips it, so the media is
+    # still there for the resume.
+    _apply_retention(job, config, state, video)
+
+
+def _apply_retention(job: JobPaths, config: RunConfig, state: JobState, video: Path | None) -> None:
+    """Delete what the --no-retain-* flags name, now that the job is complete.
+
+    Only a file that is actually on disk is deleted and recorded: stamping
+    DELETED_BY_POLICY over an artifact that was already gone would make the event
+    log claim a deletion this run never made.
+    """
+    if config.no_retain_video and video is not None:
+        _record_deletion(job, state, "video", "--no-retain-video", video)
+    if config.no_retain_audio and job.audio_file.exists():
+        _record_deletion(job, state, "audio", "--no-retain-audio", job.audio_file)
 
 
 def _do_download(job: JobPaths, url: str, config: RunConfig, state: JobState) -> Path:
@@ -182,9 +198,6 @@ def _do_audio(job: JobPaths, config: RunConfig, state: JobState, video: Path | N
         duration_s=ffmpeg.probe_duration(flac),
     )
     store.save(job, state)
-    # Only now, with the successor verified and committed, is deletion safe.
-    if config.no_retain_video:
-        _record_deletion(job, state, "video", "--no-retain-video", video)
 
 
 def _do_transcript(
@@ -233,8 +246,6 @@ def _do_transcript(
     state.outputs = Outputs(status=ArtifactStatus.PRESENT, paths=written)
     store.save(job, state)
     outputs_stage.publish(job, written, config.formats, out_dir=config.out_dir, title=state.title)
-    if config.no_retain_audio:
-        _record_deletion(job, state, "audio", "--no-retain-audio", job.audio_file)
 
 
 def _rerender(job: JobPaths, config: RunConfig, state: JobState) -> dict[str, str]:

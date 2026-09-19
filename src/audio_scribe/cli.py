@@ -153,8 +153,8 @@ def main() -> None:
 @click.option("--js-runtime", default=None, help="deno (default), node, bun or quickjs.")
 @click.option("--ov-cache-dir", default=None, type=click.Path(path_type=Path))
 @click.option("--no-retain", is_flag=True, help="Delete both video and audio when done.")
-@click.option("--no-retain-video", is_flag=True, help="Delete the video after extraction.")
-@click.option("--no-retain-audio", is_flag=True, help="Delete the FLAC after transcription.")
+@click.option("--no-retain-video", is_flag=True, help="Delete the video when the job is done.")
+@click.option("--no-retain-audio", is_flag=True, help="Delete the FLAC when the job is done.")
 @click.option("-y", "--yes", is_flag=True, help="Confirm destructive flags non-interactively.")
 @click.option("--force", is_flag=True, help="Re-run every stage.")
 @click.option(
