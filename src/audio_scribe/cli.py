@@ -8,14 +8,14 @@ from typing import Any, NoReturn
 
 import click
 
-from ccn_transcribe import doctor as doctor_mod
-from ccn_transcribe import errors, logsetup, paths
-from ccn_transcribe.config import DEFAULT_FORMATS, RunConfig
-from ccn_transcribe.formats import FORMATS
-from ccn_transcribe.jobs import batch, store
-from ccn_transcribe.jobs.plan import Stage
-from ccn_transcribe.media import ffmpeg, ytdlp_opts
-from ccn_transcribe.stages import download as download_stage
+from audio_scribe import doctor as doctor_mod
+from audio_scribe import errors, logsetup, paths
+from audio_scribe.config import DEFAULT_FORMATS, RunConfig
+from audio_scribe.formats import FORMATS
+from audio_scribe.jobs import batch, store
+from audio_scribe.jobs.plan import Stage
+from audio_scribe.media import ffmpeg, ytdlp_opts
+from audio_scribe.stages import download as download_stage
 
 STAGE_NAMES = [s.value for s in Stage]
 
@@ -78,7 +78,7 @@ def build_config(**kw: Any) -> RunConfig:
 
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
-@click.version_option(package_name="ccn-transcribe")
+@click.version_option(package_name="audio-scribe")
 def main() -> None:
     """Download videos, extract FLAC, and transcribe with Whisper."""
 
@@ -177,7 +177,7 @@ def run_command(urls: tuple[str, ...], input_files: tuple[Path, ...], **kw: Any)
             raise errors.ConfigError("no URLs given", hint="Pass a URL or -i urls.txt.")
         batch.confirm_retention(config)
         result = batch.run_batch(targets, config, dry_run=bool(kw["dry_run"]))
-    except errors.CcnError as exc:
+    except errors.AudioScribeError as exc:
         _fail(exc, verbose=bool(kw["verbose"]))
     click.echo(result.summary())
     sys.exit(result.exit_code)
@@ -213,7 +213,7 @@ def status_command(job_ids: tuple[str, ...], workdir: Path) -> None:
         )
 
 
-def _fail(exc: errors.CcnError, *, verbose: bool) -> NoReturn:
+def _fail(exc: errors.AudioScribeError, *, verbose: bool) -> NoReturn:
     click.echo(f"ERROR: {exc}", err=True)
     if exc.hint:
         click.echo(f"hint: {exc.hint}", err=True)

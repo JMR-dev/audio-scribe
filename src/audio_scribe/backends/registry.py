@@ -5,10 +5,10 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from ccn_transcribe import errors
-from ccn_transcribe.backends.amd_backend import AmdBackend
-from ccn_transcribe.backends.nvidia_backend import NvidiaBackend
-from ccn_transcribe.backends.openvino_backend import OpenvinoCpuBackend, OpenvinoGpuBackend
+from audio_scribe import errors
+from audio_scribe.backends.amd_backend import AmdBackend
+from audio_scribe.backends.nvidia_backend import NvidiaBackend
+from audio_scribe.backends.openvino_backend import OpenvinoCpuBackend, OpenvinoGpuBackend
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -17,8 +17,8 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
 
-    from ccn_transcribe.backends.base import Backend, TranscribeRequest
-    from ccn_transcribe.transcript import TranscriptResult
+    from audio_scribe.backends.base import Backend, TranscribeRequest
+    from audio_scribe.transcript import TranscriptResult
 
 log = logging.getLogger(__name__)
 
@@ -172,5 +172,5 @@ def transcribe_with_fallback(
         )
     raise errors.TranscribeError(
         "no usable backend remains",
-        hint=str(last) if last else "Run `ccn-transcribe doctor` to see what was detected.",
+        hint=str(last) if last else "Run `audio-scribe doctor` to see what was detected.",
     ) from last

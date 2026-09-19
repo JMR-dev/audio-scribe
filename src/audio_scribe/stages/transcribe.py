@@ -6,17 +6,17 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from ccn_transcribe.backends import registry
-from ccn_transcribe.media import ffmpeg
-from ccn_transcribe.transcript import Segment
+from audio_scribe.backends import registry
+from audio_scribe.media import ffmpeg
+from audio_scribe.transcript import Segment
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ccn_transcribe.backends.base import Backend, TranscribeRequest
-    from ccn_transcribe.backends.registry import BackendHolder
-    from ccn_transcribe.paths import JobPaths
-    from ccn_transcribe.transcript import TranscriptResult
+    from audio_scribe.backends.base import Backend, TranscribeRequest
+    from audio_scribe.backends.registry import BackendHolder
+    from audio_scribe.paths import JobPaths
+    from audio_scribe.transcript import TranscriptResult
 
 log = logging.getLogger(__name__)
 

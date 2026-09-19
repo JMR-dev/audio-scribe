@@ -1,8 +1,8 @@
-"""python -m ccn_transcribe"""
+"""python -m audio_scribe"""
 
 from __future__ import annotations
 
-from ccn_transcribe.cli import main
+from audio_scribe.cli import main
 
 __all__ = ["main"]
 

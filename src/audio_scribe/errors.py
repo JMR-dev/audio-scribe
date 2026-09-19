@@ -15,8 +15,8 @@ EXIT_FATAL = 2
 EXIT_INTERRUPTED = 130
 
 
-class CcnError(Exception):
-    code: ClassVar[str] = "ccn_error"
+class AudioScribeError(Exception):
+    code: ClassVar[str] = "audio_scribe_error"
     exit_code: ClassVar[int] = EXIT_JOB_FAILED
     retryable: ClassVar[bool] = False
 
@@ -29,7 +29,7 @@ class CcnError(Exception):
         return self.message
 
 
-class FatalError(CcnError):
+class FatalError(AudioScribeError):
     """Aborts the run. Continuing would only produce more bad artifacts."""
 
     code: ClassVar[str] = "fatal"
@@ -52,7 +52,7 @@ class SchemaTooNewError(FatalError):
     code: ClassVar[str] = "schema_too_new"
 
 
-class JobError(CcnError):
+class JobError(AudioScribeError):
     """Scoped to one job; the batch continues."""
 
     code: ClassVar[str] = "job"

@@ -11,15 +11,15 @@ import logging
 from enum import StrEnum
 from typing import TYPE_CHECKING
 
-from ccn_transcribe import errors
-from ccn_transcribe.jobs.state import Artifact, ArtifactStatus, Outputs
-from ccn_transcribe.media import ffmpeg
+from audio_scribe import errors
+from audio_scribe.jobs.state import Artifact, ArtifactStatus, Outputs
+from audio_scribe.media import ffmpeg
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from pathlib import Path
 
-    from ccn_transcribe.paths import JobPaths
+    from audio_scribe.paths import JobPaths
 
 log = logging.getLogger(__name__)
 

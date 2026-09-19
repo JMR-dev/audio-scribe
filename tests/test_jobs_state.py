@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from ccn_transcribe import errors
-from ccn_transcribe.jobs import state as job_state
+from audio_scribe import errors
+from audio_scribe.jobs import state as job_state
 
 
 def make() -> job_state.JobState:

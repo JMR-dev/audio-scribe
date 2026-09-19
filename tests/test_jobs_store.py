@@ -6,9 +6,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ccn_transcribe import errors, paths
-from ccn_transcribe.jobs import state as job_state
-from ccn_transcribe.jobs import store
+from audio_scribe import errors, paths
+from audio_scribe.jobs import state as job_state
+from audio_scribe.jobs import store
 
 if TYPE_CHECKING:
     from pathlib import Path

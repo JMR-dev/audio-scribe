@@ -5,10 +5,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ccn_transcribe import paths
-from ccn_transcribe.jobs import recover, store
-from ccn_transcribe.jobs.state import ArtifactStatus
-from ccn_transcribe.media import ffmpeg
+from audio_scribe import paths
+from audio_scribe.jobs import recover, store
+from audio_scribe.jobs.state import ArtifactStatus
+from audio_scribe.media import ffmpeg
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -17,7 +17,7 @@ from typing import TYPE_CHECKING, Literal
 
 import numpy as np
 
-from ccn_transcribe import errors
+from audio_scribe import errors
 
 if TYPE_CHECKING:
     from pathlib import Path

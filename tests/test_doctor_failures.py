@@ -11,9 +11,9 @@ from typing import TYPE_CHECKING, Any, ClassVar, NamedTuple
 
 import openvino as ov
 
-from ccn_transcribe import doctor
-from ccn_transcribe.backends import probe
-from ccn_transcribe.media import ffmpeg, ytdlp_opts
+from audio_scribe import doctor
+from audio_scribe.backends import probe
+from audio_scribe.media import ffmpeg, ytdlp_opts
 
 if TYPE_CHECKING:
     from collections.abc import Callable

@@ -15,7 +15,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
-from ccn_transcribe import errors
+from audio_scribe import errors
 
 SCHEMA_VERSION = 1
 
@@ -127,7 +127,7 @@ class JobState:
         if version > SCHEMA_VERSION:
             raise errors.SchemaTooNewError(
                 f"state.json is schema v{version}, but this build understands v{SCHEMA_VERSION}",
-                hint="Upgrade ccn-transcribe, or point --workdir somewhere else.",
+                hint="Upgrade audio-scribe, or point --workdir somewhere else.",
             )
         artifacts = doc.get("artifacts", {})
         record = doc.get("transcription")

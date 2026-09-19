@@ -7,23 +7,23 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from ccn_transcribe import errors
-from ccn_transcribe.jobs import recover, store, verify
-from ccn_transcribe.jobs.plan import Stage, Verdicts, plan_stages
-from ccn_transcribe.jobs.state import Artifact, ArtifactStatus, JobState, Outputs
-from ccn_transcribe.jobs.state import TranscriptionRecord as Record
-from ccn_transcribe.media import ffmpeg
-from ccn_transcribe.stages import audio as audio_stage
-from ccn_transcribe.stages import download as download_stage
-from ccn_transcribe.stages import outputs as outputs_stage
-from ccn_transcribe.stages import transcribe as transcribe_stage
+from audio_scribe import errors
+from audio_scribe.jobs import recover, store, verify
+from audio_scribe.jobs.plan import Stage, Verdicts, plan_stages
+from audio_scribe.jobs.state import Artifact, ArtifactStatus, JobState, Outputs
+from audio_scribe.jobs.state import TranscriptionRecord as Record
+from audio_scribe.media import ffmpeg
+from audio_scribe.stages import audio as audio_stage
+from audio_scribe.stages import download as download_stage
+from audio_scribe.stages import outputs as outputs_stage
+from audio_scribe.stages import transcribe as transcribe_stage
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ccn_transcribe.backends.registry import BackendHolder
-    from ccn_transcribe.config import RunConfig
-    from ccn_transcribe.paths import JobPaths
+    from audio_scribe.backends.registry import BackendHolder
+    from audio_scribe.config import RunConfig
+    from audio_scribe.paths import JobPaths
 
 log = logging.getLogger(__name__)
 
@@ -118,7 +118,7 @@ def run_job(
         _execute(job, url, config, state, stages=stages, holder=holder)
     except errors.FatalError:
         raise
-    except errors.CcnError as exc:
+    except errors.AudioScribeError as exc:
         state.last_error = {"stage": "unknown", "message": str(exc)}
         store.save(job, state)
         return JobOutcome(job.root.name, url, stages, ok=False, error=str(exc))
@@ -239,7 +239,7 @@ def _do_transcript(
 
 def _rerender(job: JobPaths, config: RunConfig, state: JobState) -> dict[str, str]:
     """Re-render other formats from the saved segments, no model needed."""
-    from ccn_transcribe.transcript import (  # pylint: disable=import-outside-toplevel
+    from audio_scribe.transcript import (  # pylint: disable=import-outside-toplevel
         TranscriptResult,
     )
 

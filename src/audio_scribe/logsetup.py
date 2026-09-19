@@ -10,9 +10,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Generator
 
-    from ccn_transcribe.paths import JobPaths
+    from audio_scribe.paths import JobPaths
 
-ROOT = "ccn_transcribe"
+ROOT = "audio_scribe"
 
 
 def configure(verbose: int = 0, quiet: bool = False) -> None:

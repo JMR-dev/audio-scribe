@@ -3,10 +3,10 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from ccn_transcribe import errors
-from ccn_transcribe.backends.amd_backend import AmdBackend
-from ccn_transcribe.backends.base import TranscribeRequest
-from ccn_transcribe.backends.nvidia_backend import NvidiaBackend
+from audio_scribe import errors
+from audio_scribe.backends.amd_backend import AmdBackend
+from audio_scribe.backends.base import TranscribeRequest
+from audio_scribe.backends.nvidia_backend import NvidiaBackend
 
 STUBS = [NvidiaBackend, AmdBackend]
 

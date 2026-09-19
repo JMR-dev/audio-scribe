@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from ccn_transcribe import errors
+from audio_scribe import errors
 
 if TYPE_CHECKING:
     from collections.abc import Sequence

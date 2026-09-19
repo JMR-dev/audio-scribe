@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "ccn-transcribe"
+name = "audio-scribe"
 version = "0.1.0"
 description = "Download videos, extract FLAC, and transcribe with Whisper on whatever GPU is present."
 requires-python = ">=3.12"
@@ -18,7 +18,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ccn-transcribe = "ccn_transcribe.cli:main"
+audio-scribe = "audio_scribe.cli:main"
 
 [dependency-groups]
 dev = [
@@ -32,7 +32,7 @@ dev = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/ccn_transcribe"]
+packages = ["src/audio_scribe"]
 
 [tool.ruff]
 line-length = 100
@@ -92,7 +92,7 @@ addopts = "-q"
 
 [tool.coverage.run]
 branch = true
-source = ["src/ccn_transcribe"]
+source = ["src/audio_scribe"]
 
 [tool.coverage.report]
 fail_under = 100

@@ -94,6 +94,53 @@ wheels = [
 ]
 
 [[package]]
+name = "audio-scribe"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "click" },
+    { name = "huggingface-hub" },
+    { name = "numpy" },
+    { name = "openvino" },
+    { name = "openvino-genai" },
+    { name = "yt-dlp", extra = ["default", "deno"] },
+    { name = "yt-dlp-ejs" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pre-commit" },
+    { name = "pylint" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "click", specifier = ">=8.1,<9" },
+    { name = "huggingface-hub", specifier = ">=1.31,<2" },
+    { name = "numpy", specifier = ">=2.5,<3" },
+    { name = "openvino", specifier = "==2026.3.1" },
+    { name = "openvino-genai", specifier = "==2026.3.1.0" },
+    { name = "yt-dlp", extras = ["default", "deno"], specifier = ">=2026.8.19" },
+    { name = "yt-dlp-ejs", specifier = ">=0.8" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.11" },
+    { name = "pre-commit", specifier = ">=3.8" },
+    { name = "pylint", specifier = ">=3.2" },
+    { name = "pyright", specifier = ">=1.1.380" },
+    { name = "pytest", specifier = ">=8" },
+    { name = "pytest-cov", specifier = ">=5" },
+    { name = "ruff", specifier = ">=0.6" },
+]
+
+[[package]]
 name = "brotli"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
@@ -150,53 +197,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/06/78/076419ed6c2c6aa3eaac6fd6b076502b4be89d50625fcdc513cd4aeca718/brotlicffi-1.2.0.2-cp39-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:22916101de0e7ff535f2edf54b52a85591853b8ae9a98737643defdd3c063a3a", size = 1536851, upload-time = "2026-08-21T17:29:07.599Z" },
     { url = "https://files.pythonhosted.org/packages/35/dd/31ae9945cbd605339fb51c9a609f7dbb182cd361adeabc1d470142357206/brotlicffi-1.2.0.2-cp39-abi3-win32.whl", hash = "sha256:df1d34c4ad9adbf7f63a6b42f7d0e4dfd259c88141b85145b57abecc1abc3b24", size = 342379, upload-time = "2026-08-21T17:29:09.05Z" },
     { url = "https://files.pythonhosted.org/packages/95/ae/afd54e744df93b51cc29f6a19beccf9998b25743d7177697390de10479d1/brotlicffi-1.2.0.2-cp39-abi3-win_amd64.whl", hash = "sha256:489ca4da3ee65926d72bf01584b61088a9da6bdd1bb01b2040901e1beaffa8f0", size = 379761, upload-time = "2026-08-21T17:29:10.687Z" },
-]
-
-[[package]]
-name = "ccn-transcribe"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "click" },
-    { name = "huggingface-hub" },
-    { name = "numpy" },
-    { name = "openvino" },
-    { name = "openvino-genai" },
-    { name = "yt-dlp", extra = ["default", "deno"] },
-    { name = "yt-dlp-ejs" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pre-commit" },
-    { name = "pylint" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "click", specifier = ">=8.1,<9" },
-    { name = "huggingface-hub", specifier = ">=1.31,<2" },
-    { name = "numpy", specifier = ">=2.5,<3" },
-    { name = "openvino", specifier = "==2026.3.1" },
-    { name = "openvino-genai", specifier = "==2026.3.1.0" },
-    { name = "yt-dlp", extras = ["default", "deno"], specifier = ">=2026.8.19" },
-    { name = "yt-dlp-ejs", specifier = ">=0.8" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.11" },
-    { name = "pre-commit", specifier = ">=3.8" },
-    { name = "pylint", specifier = ">=3.2" },
-    { name = "pyright", specifier = ">=1.1.380" },
-    { name = "pytest", specifier = ">=8" },
-    { name = "pytest-cov", specifier = ">=5" },
-    { name = "ruff", specifier = ">=0.6" },
 ]
 
 [[package]]

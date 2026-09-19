@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from ccn_transcribe import formats
-from ccn_transcribe.transcript import Segment, TranscriptResult
+from audio_scribe import formats
+from audio_scribe.transcript import Segment, TranscriptResult
 
 SEGMENTS = (Segment(0.0, 1.5, "Hello there."), Segment(1.5, 3.25, "General Kenobi."))
 

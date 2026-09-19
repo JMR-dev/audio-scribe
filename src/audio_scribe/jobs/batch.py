@@ -7,18 +7,18 @@ import sys
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, TextIO
 
-from ccn_transcribe import errors, logsetup, paths
-from ccn_transcribe.backends.registry import BackendHolder
-from ccn_transcribe.jobs import index, store
-from ccn_transcribe.jobs.index import Target
-from ccn_transcribe.jobs.runner import JobOutcome, run_job
-from ccn_transcribe.stages import download as download_stage
+from audio_scribe import errors, logsetup, paths
+from audio_scribe.backends.registry import BackendHolder
+from audio_scribe.jobs import index, store
+from audio_scribe.jobs.index import Target
+from audio_scribe.jobs.runner import JobOutcome, run_job
+from audio_scribe.stages import download as download_stage
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
     from pathlib import Path
 
-    from ccn_transcribe.config import RunConfig
+    from audio_scribe.config import RunConfig
 
 log = logging.getLogger(__name__)
 
@@ -151,7 +151,7 @@ def _run_one(
         targets = expand(url, config, workspace, remember=not dry_run)
     except errors.FatalError:
         raise
-    except errors.CcnError as exc:
+    except errors.AudioScribeError as exc:
         log.error("%s: %s", url, exc)
         result.outcomes.append(JobOutcome(url, url, (), ok=False, error=str(exc)))
         return
@@ -167,7 +167,7 @@ def _run_one(
                 )
         except errors.FatalError:
             raise
-        except errors.CcnError as exc:
+        except errors.AudioScribeError as exc:
             # One bad job must never take the batch down with it.
             log.error("%s: %s", job.root.name, exc)
             result.outcomes.append(

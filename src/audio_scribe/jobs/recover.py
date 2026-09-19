@@ -14,17 +14,17 @@ import json
 import logging
 from typing import TYPE_CHECKING, Any
 
-from ccn_transcribe import errors, formats
-from ccn_transcribe.jobs import store
-from ccn_transcribe.jobs.state import Artifact, ArtifactStatus, JobState, Outputs
-from ccn_transcribe.jobs.state import TranscriptionRecord as Record
-from ccn_transcribe.media import ffmpeg
-from ccn_transcribe.stages import download as download_stage
+from audio_scribe import errors, formats
+from audio_scribe.jobs import store
+from audio_scribe.jobs.state import Artifact, ArtifactStatus, JobState, Outputs
+from audio_scribe.jobs.state import TranscriptionRecord as Record
+from audio_scribe.media import ffmpeg
+from audio_scribe.stages import download as download_stage
 
 if TYPE_CHECKING:
     from pathlib import Path
 
-    from ccn_transcribe.paths import JobPaths
+    from audio_scribe.paths import JobPaths
 
 log = logging.getLogger(__name__)
 

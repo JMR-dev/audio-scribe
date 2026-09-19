@@ -6,11 +6,11 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ccn_transcribe.jobs.plan import Stage
-from ccn_transcribe.media.ytdlp_opts import DEFAULT_DOWNLOAD, DownloadConfig
+from audio_scribe.jobs.plan import Stage
+from audio_scribe.media.ytdlp_opts import DEFAULT_DOWNLOAD, DownloadConfig
 
 if TYPE_CHECKING:
-    from ccn_transcribe.backends.base import TranscribeRequest
+    from audio_scribe.backends.base import TranscribeRequest
 
 DEFAULT_FORMATS = ("txt", "srt", "vtt", "json")
 
@@ -49,7 +49,7 @@ class RunConfig:
         return "; ".join(parts)
 
     def request(self) -> TranscribeRequest:
-        from ccn_transcribe.backends.base import (  # pylint: disable=import-outside-toplevel
+        from audio_scribe.backends.base import (  # pylint: disable=import-outside-toplevel
             TranscribeRequest,
         )
 

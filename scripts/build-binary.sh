@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a self-contained ccn-transcribe directory that runs without Python or uv.
+# Build a self-contained audio-scribe directory that runs without Python or uv.
 #
 # onedir, never onefile: onefile extracts ~450 MB to /tmp on every launch.
 # deno lands in bin/ because PyInstaller points sys.prefix at the bundle, which
@@ -10,7 +10,7 @@ cd "$(dirname "$0")/.."
 DIST=${1:-dist}
 
 uv run --locked --with pyinstaller pyinstaller \
-  --noconfirm --onedir --name ccn-transcribe \
+  --noconfirm --onedir --name audio-scribe \
   --distpath "$DIST" --workpath "build/pyinstaller" --specpath "build" \
   --collect-all openvino \
   --collect-all openvino_genai \
@@ -18,8 +18,8 @@ uv run --locked --with pyinstaller pyinstaller \
   --collect-all yt_dlp \
   --collect-all yt_dlp_ejs \
   --add-binary "$PWD/.venv/bin/deno:bin" \
-  src/ccn_transcribe/__main__.py
+  src/audio_scribe/__main__.py
 
 echo
-echo "built $DIST/ccn-transcribe ($(du -sh "$DIST/ccn-transcribe" | cut -f1))"
-echo "verify it with: $DIST/ccn-transcribe/ccn-transcribe doctor"
+echo "built $DIST/audio-scribe ($(du -sh "$DIST/audio-scribe" | cut -f1))"
+echo "verify it with: $DIST/audio-scribe/audio-scribe doctor"

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ccn_transcribe.media import ytdlp_opts as opts
+from audio_scribe.media import ytdlp_opts as opts
 
 if TYPE_CHECKING:
     from pathlib import Path

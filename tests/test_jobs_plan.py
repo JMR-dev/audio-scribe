@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from ccn_transcribe.jobs.plan import Stage, Verdicts, plan_stages
-from ccn_transcribe.jobs.verify import Verdict
+from audio_scribe.jobs.plan import Stage, Verdicts, plan_stages
+from audio_scribe.jobs.verify import Verdict
 
 OK = Verdict.OK
 GONE = Verdict.SATISFIED_ABSENT

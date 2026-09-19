@@ -8,15 +8,15 @@ from typing import Any
 import pytest
 from click.testing import CliRunner
 
-import ccn_transcribe.__main__ as entry
-from ccn_transcribe import cli, doctor, errors, logsetup, paths
-from ccn_transcribe.config import RunConfig
-from ccn_transcribe.jobs import batch, store
-from ccn_transcribe.jobs.plan import Stage
-from ccn_transcribe.jobs.runner import JobOutcome
-from ccn_transcribe.jobs.state import JobState
-from ccn_transcribe.media import ytdlp_opts
-from ccn_transcribe.stages import download as download_stage
+import audio_scribe.__main__ as entry
+from audio_scribe import cli, doctor, errors, logsetup, paths
+from audio_scribe.config import RunConfig
+from audio_scribe.jobs import batch, store
+from audio_scribe.jobs.plan import Stage
+from audio_scribe.jobs.runner import JobOutcome
+from audio_scribe.jobs.state import JobState
+from audio_scribe.media import ytdlp_opts
+from audio_scribe.stages import download as download_stage
 
 
 class TestReadUrls:
@@ -246,7 +246,7 @@ class TestRunBatch:
         def fake_run(job: Any, url: str, *_a: object, **_k: object) -> JobOutcome:
             return JobOutcome(job.root.name, url, (), ok=True)
 
-        monkeypatch.setattr("ccn_transcribe.jobs.batch.run_job", fake_run)
+        monkeypatch.setattr("audio_scribe.jobs.batch.run_job", fake_run)
         result = batch.run_batch(
             ["https://y.test/bad", "https://y.test/good"], self._config(tmp_path)
         )
@@ -274,7 +274,7 @@ class TestRunBatch:
             raise errors.MediaError("no audio")
 
         monkeypatch.setattr(download_stage, "extract_info", info)
-        monkeypatch.setattr("ccn_transcribe.jobs.batch.run_job", boom)
+        monkeypatch.setattr("audio_scribe.jobs.batch.run_job", boom)
         result = batch.run_batch(["u"], self._config(tmp_path))
         assert result.failed[0].error == "no audio"
 
@@ -295,7 +295,7 @@ class TestLogSetup:
         job.ensure()
         before = len(logging.getLogger(logsetup.ROOT).handlers)
         with logsetup.job_log(job):
-            logging.getLogger("ccn_transcribe.test").info("hello")
+            logging.getLogger("audio_scribe.test").info("hello")
         assert "hello" in (job.logs_dir / "job.log").read_text()
         # A 200-URL batch must not leak 200 open handlers.
         assert len(logging.getLogger(logsetup.ROOT).handlers) == before
@@ -502,7 +502,7 @@ def test_a_fatal_error_inside_a_job_stops_the_batch(
         raise errors.DiskFullError("no space")
 
     monkeypatch.setattr(download_stage, "extract_info", info)
-    monkeypatch.setattr("ccn_transcribe.jobs.batch.run_job", boom)
+    monkeypatch.setattr("audio_scribe.jobs.batch.run_job", boom)
     with pytest.raises(errors.DiskFullError):
         batch.run_batch(["u"], RunConfig(workdir=tmp_path / "t"))
 
@@ -520,7 +520,7 @@ def test_an_error_without_a_hint_prints_only_the_message(
 
 
 def test_module_entrypoint_is_the_cli() -> None:
-    # python -m ccn_transcribe must reach the same command group, and the
+    # python -m audio_scribe must reach the same command group, and the
     # __main__ guard must be present: Python 3.14's forkserver re-imports
     # __main__, and without the guard the program runs a second copy of itself.
     assert entry.main is cli.main

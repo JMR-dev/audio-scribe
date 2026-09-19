@@ -2,25 +2,25 @@ from __future__ import annotations
 
 import pytest
 
-from ccn_transcribe import errors
+from audio_scribe import errors
 
 
 def test_base_carries_message_and_hint() -> None:
-    err = errors.CcnError("something broke", hint="try this")
+    err = errors.AudioScribeError("something broke", hint="try this")
     assert str(err) == "something broke"
     assert err.hint == "try this"
     assert err.exit_code == errors.EXIT_JOB_FAILED
 
 
 def test_hint_defaults_to_none() -> None:
-    assert errors.CcnError("bare").hint is None
+    assert errors.AudioScribeError("bare").hint is None
 
 
 @pytest.mark.parametrize(
     "cls",
     [errors.ConfigError, errors.PreflightError, errors.DiskFullError, errors.SchemaTooNewError],
 )
-def test_fatal_errors_abort_the_run(cls: type[errors.CcnError]) -> None:
+def test_fatal_errors_abort_the_run(cls: type[errors.AudioScribeError]) -> None:
     err = cls("nope")
     assert err.exit_code == errors.EXIT_FATAL
     assert isinstance(err, errors.FatalError)
@@ -63,7 +63,9 @@ def test_only_network_errors_are_retryable() -> None:
 
 def test_every_error_class_declares_a_distinct_code() -> None:
     classes = [
-        v for v in vars(errors).values() if isinstance(v, type) and issubclass(v, errors.CcnError)
+        v
+        for v in vars(errors).values()
+        if isinstance(v, type) and issubclass(v, errors.AudioScribeError)
     ]
     codes = [c.code for c in classes]
     assert len(codes) == len(set(codes)), "duplicate .code values"

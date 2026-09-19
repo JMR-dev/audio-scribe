@@ -10,14 +10,14 @@ from contextlib import contextmanager
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING, Any
 
-from ccn_transcribe import errors
-from ccn_transcribe.jobs.state import JobState
+from audio_scribe import errors
+from audio_scribe.jobs.state import JobState
 
 if TYPE_CHECKING:
     from collections.abc import Generator
     from pathlib import Path
 
-    from ccn_transcribe.paths import JobPaths
+    from audio_scribe.paths import JobPaths
 
 log = logging.getLogger(__name__)
 

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ccn_transcribe import paths
-from ccn_transcribe.jobs import state as job_state
-from ccn_transcribe.jobs import verify
-from ccn_transcribe.media import ffmpeg
+from audio_scribe import paths
+from audio_scribe.jobs import state as job_state
+from audio_scribe.jobs import verify
+from audio_scribe.media import ffmpeg
 
 if TYPE_CHECKING:
     from pathlib import Path

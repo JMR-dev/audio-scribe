@@ -12,7 +12,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterable, Mapping, Sequence
 
-    from ccn_transcribe.transcript import Segment, TranscriptResult
+    from audio_scribe.transcript import Segment, TranscriptResult
 
 FORMATS = ("txt", "srt", "vtt", "json")
 

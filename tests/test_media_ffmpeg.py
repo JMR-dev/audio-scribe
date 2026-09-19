@@ -7,8 +7,8 @@ from typing import TYPE_CHECKING
 import numpy as np
 import pytest
 
-from ccn_transcribe import errors
-from ccn_transcribe.media import ffmpeg
+from audio_scribe import errors
+from audio_scribe.media import ffmpeg
 
 if TYPE_CHECKING:
     from pathlib import Path

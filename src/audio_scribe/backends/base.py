@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
 
-    from ccn_transcribe.transcript import TranscriptResult
+    from audio_scribe.transcript import TranscriptResult
 
 
 @dataclass(frozen=True, slots=True)

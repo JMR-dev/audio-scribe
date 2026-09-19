@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ccn_transcribe import paths
-from ccn_transcribe.jobs import index
+from audio_scribe import paths
+from audio_scribe.jobs import index
 
 if TYPE_CHECKING:
     from pathlib import Path

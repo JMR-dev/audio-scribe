@@ -13,13 +13,13 @@ from dataclasses import dataclass
 from enum import StrEnum
 from pathlib import Path
 
-from ccn_transcribe.backends import probe
-from ccn_transcribe.backends.openvino_backend import (
+from audio_scribe.backends import probe
+from audio_scribe.backends.openvino_backend import (
     DEFAULT_MODEL,
     cache_root,
     snapshot,
 )
-from ccn_transcribe.media import ffmpeg, ytdlp_opts
+from audio_scribe.media import ffmpeg, ytdlp_opts
 
 
 class Status(StrEnum):

@@ -4,7 +4,7 @@ import logging
 
 import pytest
 
-from ccn_transcribe.transcript import Segment, TranscriptResult, normalize_segments
+from audio_scribe.transcript import Segment, TranscriptResult, normalize_segments
 
 
 def _result(**kw: object) -> TranscriptResult:

@@ -7,15 +7,15 @@ import os
 import shutil
 from typing import TYPE_CHECKING
 
-from ccn_transcribe import formats
-from ccn_transcribe.paths import output_stem
+from audio_scribe import formats
+from audio_scribe.paths import output_stem
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
     from pathlib import Path
 
-    from ccn_transcribe.paths import JobPaths
-    from ccn_transcribe.transcript import TranscriptResult
+    from audio_scribe.paths import JobPaths
+    from audio_scribe.transcript import TranscriptResult
 
 log = logging.getLogger(__name__)
 

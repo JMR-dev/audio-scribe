@@ -13,8 +13,8 @@ import logging
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, cast
 
-from ccn_transcribe import paths
-from ccn_transcribe.jobs import store
+from audio_scribe import paths
+from audio_scribe.jobs import store
 
 if TYPE_CHECKING:
     from collections.abc import Mapping, Sequence

@@ -5,13 +5,13 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pytest
 
-from ccn_transcribe import errors, paths
-from ccn_transcribe.backends.base import ToolchainStatus, TranscribeRequest
-from ccn_transcribe.media import ffmpeg
-from ccn_transcribe.stages import audio as audio_stage
-from ccn_transcribe.stages import outputs as outputs_stage
-from ccn_transcribe.stages import transcribe as transcribe_stage
-from ccn_transcribe.transcript import Segment, TranscriptResult
+from audio_scribe import errors, paths
+from audio_scribe.backends.base import ToolchainStatus, TranscribeRequest
+from audio_scribe.media import ffmpeg
+from audio_scribe.stages import audio as audio_stage
+from audio_scribe.stages import outputs as outputs_stage
+from audio_scribe.stages import transcribe as transcribe_stage
+from audio_scribe.transcript import Segment, TranscriptResult
 
 if TYPE_CHECKING:
     from pathlib import Path

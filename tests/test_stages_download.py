@@ -4,9 +4,9 @@ from typing import TYPE_CHECKING, Any
 
 import pytest
 
-from ccn_transcribe import errors, paths
-from ccn_transcribe.media import ytdlp_opts
-from ccn_transcribe.stages import download
+from audio_scribe import errors, paths
+from audio_scribe.media import ytdlp_opts
+from audio_scribe.stages import download
 
 if TYPE_CHECKING:
     from pathlib import Path

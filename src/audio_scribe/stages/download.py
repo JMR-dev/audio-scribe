@@ -13,14 +13,14 @@ import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from ccn_transcribe import errors, paths
-from ccn_transcribe.media import ytdlp_opts
+from audio_scribe import errors, paths
+from audio_scribe.media import ytdlp_opts
 
 if TYPE_CHECKING:
     from collections.abc import Iterator, Sequence
     from pathlib import Path
 
-    from ccn_transcribe.paths import JobPaths
+    from audio_scribe.paths import JobPaths
 
 log = logging.getLogger(__name__)
 
@@ -47,7 +47,7 @@ SOURCE_PATTERNS: tuple[tuple[re.Pattern[str], type[errors.SourceError], str], ..
         re.compile(r"confirm you.{0,5}re not a bot|not a bot", re.I),
         errors.BotCheckError,
         "YouTube bot check. Try --cookies-from-browser, or check that a JS runtime "
-        "is available: ccn-transcribe doctor",
+        "is available: audio-scribe doctor",
     ),
     (
         re.compile(
@@ -92,7 +92,7 @@ ARIA2_EXITS: dict[int, tuple[str, str]] = {
 }
 
 
-def classify(message: str, job_id: str | None = None) -> errors.CcnError:
+def classify(message: str, job_id: str | None = None) -> errors.AudioScribeError:
     """Map a yt-dlp message onto an actionable error."""
     if "no space left" in message.lower():
         return errors.DiskFullError(message, hint="Free some space and re-run.")
@@ -246,7 +246,7 @@ def download(
     options = download_options(job, config)
     make = factory or default_factory
 
-    last: errors.CcnError | None = None
+    last: errors.AudioScribeError | None = None
     for attempt in range(1, attempts + 1):
         try:
             with make(options) as ydl:
@@ -281,7 +281,7 @@ def download(
     raise last or errors.DownloadError("download failed", job_id=job.root.name)
 
 
-def is_retryable(failure: errors.CcnError) -> bool:
+def is_retryable(failure: errors.AudioScribeError) -> bool:
     # A private video will still be private on the third try, and continuing past
     # ENOSPC only makes more corrupt artifacts.
     if isinstance(failure, errors.FatalError):

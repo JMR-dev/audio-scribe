@@ -1,21 +1,21 @@
-"""NVIDIA backend -- interface only.
+"""AMD backend -- interface only.
 
-Detection and routing are real: if an NVIDIA GPU is present the registry reports
+Detection and routing are real: if an AMD GPU is present the registry reports
 it and explains why it is stepping down. The inference path is not implemented,
 because the model cached on this machine is OpenVINO IR and cannot be loaded by
-CUDA, and nothing here could be tested against real hardware.
+ROCm, and nothing here could be tested against real hardware.
 
-Implementing it means CTranslate2 (faster-whisper) with a CTranslate2 model; note
-that CTranslate2 has no ROCm support, so AMD is a genuinely separate path.
+Implementing it means transformers + a ROCm build of torch. CTranslate2 has no
+ROCm support, so this cannot share the NVIDIA path.
 """
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, ClassVar
 
-from ccn_transcribe import errors
-from ccn_transcribe.backends import probe
-from ccn_transcribe.backends.base import ToolchainStatus
+from audio_scribe import errors
+from audio_scribe.backends import probe
+from audio_scribe.backends.base import ToolchainStatus
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -23,23 +23,21 @@ if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
 
-    from ccn_transcribe.backends.base import TranscribeRequest
-    from ccn_transcribe.transcript import TranscriptResult
+    from audio_scribe.backends.base import TranscribeRequest
+    from audio_scribe.transcript import TranscriptResult
 
-_NOT_IMPLEMENTED = (
-    "an NVIDIA GPU was detected, but the NVIDIA backend is not implemented in this build"
-)
+_NOT_IMPLEMENTED = "an AMD GPU was detected, but the AMD backend is not implemented in this build"
 _HINT = (
-    "Implement src/ccn_transcribe/backends/nvidia_backend.py using faster-whisper "
-    "(CTranslate2) with a CTranslate2 model. The cached OpenVINO IR model cannot "
-    "be loaded on CUDA."
+    "Implement src/audio_scribe/backends/amd_backend.py using transformers with a "
+    "ROCm build of torch (pip --index-url https://download.pytorch.org/whl/rocm6.2). "
+    "The cached OpenVINO IR model cannot be loaded on ROCm."
 )
 
 
-class NvidiaBackend:
-    name: ClassVar[str] = "nvidia"
-    device: ClassVar[str] = "cuda"
-    default_model: ClassVar[str] = "large-v3-turbo"
+class AmdBackend:
+    name: ClassVar[str] = "amd"
+    device: ClassVar[str] = "hip"
+    default_model: ClassVar[str] = "openai/whisper-large-v3-turbo"
 
     def __init__(self, model_id: str | None = None, cache_dir: Path | None = None) -> None:
         self.model_id = model_id or self.default_model
@@ -47,7 +45,7 @@ class NvidiaBackend:
 
     @classmethod
     def probe_hardware(cls) -> bool:
-        return probe.has_nvidia_gpu()
+        return probe.has_amd_gpu()
 
     @classmethod
     def probe_toolchain(cls) -> ToolchainStatus:

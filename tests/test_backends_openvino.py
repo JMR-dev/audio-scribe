@@ -10,14 +10,15 @@ import numpy as np
 import openvino_genai
 import pytest
 
-from ccn_transcribe import errors
-from ccn_transcribe.backends import openvino_backend as ovb
-from ccn_transcribe.backends import probe as probe_mod
-from ccn_transcribe.backends.base import TranscribeRequest
-from ccn_transcribe.media import ffmpeg
+from audio_scribe import errors
+from audio_scribe.backends import openvino_backend as ovb
+from audio_scribe.backends import probe as probe_mod
+from audio_scribe.backends.base import TranscribeRequest
+from audio_scribe.media import ffmpeg
 
 LIVE = pytest.mark.skipif(
-    not os.environ.get("CCN_LIVE"), reason="set CCN_LIVE=1 to run against the real GPU"
+    not os.environ.get("AUDIO_SCRIBE_LIVE"),
+    reason="set AUDIO_SCRIBE_LIVE=1 to run against the real GPU",
 )
 
 
@@ -65,11 +66,11 @@ class TestSupportedLanguages:
 class TestCacheRoot:
     def test_respects_xdg_cache_home(self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
         monkeypatch.setenv("XDG_CACHE_HOME", str(tmp_path))
-        assert ovb.cache_root() == tmp_path / "ccn-transcribe/ov_cache"
+        assert ovb.cache_root() == tmp_path / "audio-scribe/ov_cache"
 
     def test_falls_back_to_home_cache(self, monkeypatch: pytest.MonkeyPatch) -> None:
         monkeypatch.delenv("XDG_CACHE_HOME", raising=False)
-        assert ovb.cache_root() == Path.home() / ".cache/ccn-transcribe/ov_cache"
+        assert ovb.cache_root() == Path.home() / ".cache/audio-scribe/ov_cache"
 
     def test_is_not_relative_to_the_working_directory(self) -> None:
         # The benchmark scripts use a relative .ov_cache_* and only work from the

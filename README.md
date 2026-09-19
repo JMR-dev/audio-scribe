@@ -1,4 +1,4 @@
-# ccn-transcribe
+# audio-scribe
 
 Download a video, extract its audio losslessly as FLAC, and transcribe it with
 Whisper on whatever GPU the machine actually has.
@@ -7,9 +7,9 @@ Resumable from any completed stage, with errors that tell you what to do next.
 
 ```bash
 uv sync
-uv run ccn-transcribe doctor                      # check the environment first
-uv run ccn-transcribe run 'https://youtu.be/...'
-uv run ccn-transcribe run -i urls.txt --formats txt,srt
+uv run audio-scribe doctor                      # check the environment first
+uv run audio-scribe run 'https://youtu.be/...'
+uv run audio-scribe run -i urls.txt --formats txt,srt
 ```
 
 Hardware setup for the Intel path is documented separately in
@@ -163,13 +163,13 @@ under cron without any PATH setup.
 
 ## Installing
 
-Either route puts `ccn-transcribe` on your PATH; `ccn-transcribe doctor` tells you
+Either route puts `audio-scribe` on your PATH; `audio-scribe doctor` tells you
 whether the machine can actually run it.
 
 **As a tool** (needs uv; tracks nothing but what it installed):
 
 ```bash
-uv tool install .          # then: ccn-transcribe doctor
+uv tool install .          # then: audio-scribe doctor
 uv tool install . --reinstall     # pick up later commits
 uv tool install . --editable      # or track the checkout instead
 ```
@@ -177,12 +177,12 @@ uv tool install . --editable      # or track the checkout instead
 **As a self-contained directory** (needs neither Python nor uv at runtime):
 
 ```bash
-scripts/build-binary.sh    # then: dist/ccn-transcribe/ccn-transcribe doctor
+scripts/build-binary.sh    # then: dist/audio-scribe/audio-scribe doctor
 ```
 
 ~450 MB, most of it OpenVINO and its 47 runtime-loaded plugins. It is `onedir`
 rather than `onefile` on purpose: `onefile` extracts the whole bundle to `/tmp`
-on every launch. Move or copy the whole `ccn-transcribe/` directory, not just
+on every launch. Move or copy the whole `audio-scribe/` directory, not just
 the executable inside it. `ffmpeg`, `ffprobe` and `aria2c` are still expected on
 the system either way — they are not bundled.
 
@@ -196,6 +196,6 @@ uv run pytest
 
 Commits run ruff, pyright and the full suite at 100% coverage; pushes run pylint
 and mypy. No unit test touches the GPU, the network or a real model, which is
-what keeps the commit gate fast. Live checks sit behind `CCN_LIVE=1`.
+what keeps the commit gate fast. Live checks sit behind `AUDIO_SCRIBE_LIVE=1`.
 
 Conventional commits are enforced.

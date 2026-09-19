@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from ccn_transcribe.backends import probe
+from audio_scribe.backends import probe
 
 if TYPE_CHECKING:
     from pathlib import Path

@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING, ClassVar
 import numpy as np
 import pytest
 
-from ccn_transcribe import errors
-from ccn_transcribe.backends import registry
-from ccn_transcribe.backends.base import ToolchainStatus, TranscribeRequest
-from ccn_transcribe.transcript import Segment, TranscriptResult
+from audio_scribe import errors
+from audio_scribe.backends import registry
+from audio_scribe.backends.base import ToolchainStatus, TranscribeRequest
+from audio_scribe.transcript import Segment, TranscriptResult
 
 if TYPE_CHECKING:
     from pathlib import Path

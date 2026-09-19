@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 
-from ccn_transcribe.jobs.verify import Verdict
+from audio_scribe.jobs.verify import Verdict
 
 
 class Stage(StrEnum):

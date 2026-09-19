@@ -13,16 +13,16 @@ import time
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, ClassVar
 
-from ccn_transcribe import errors
-from ccn_transcribe.backends import probe
-from ccn_transcribe.backends.base import ToolchainStatus
-from ccn_transcribe.transcript import TranscriptResult, normalize_segments
+from audio_scribe import errors
+from audio_scribe.backends import probe
+from audio_scribe.backends.base import ToolchainStatus
+from audio_scribe.transcript import TranscriptResult, normalize_segments
 
 if TYPE_CHECKING:
     import numpy as np
     import numpy.typing as npt
 
-    from ccn_transcribe.backends.base import TranscribeRequest
+    from audio_scribe.backends.base import TranscribeRequest
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ SAMPLE_RATE = 16_000
 
 def cache_root() -> Path:
     base = os.environ.get("XDG_CACHE_HOME") or str(Path.home() / ".cache")
-    return Path(base) / "ccn-transcribe" / "ov_cache"
+    return Path(base) / "audio-scribe" / "ov_cache"
 
 
 def language_token(code: str | None, allowed: set[str] | None = None) -> str | None:
@@ -153,14 +153,14 @@ class _OpenvinoBackend:
 
     def load_hint(self) -> str:
         if self.device != "GPU":
-            return "Try --device cpu, or run `ccn-transcribe doctor`."
+            return "Try --device cpu, or run `audio-scribe doctor`."
         nodes = [n for n in probe.render_nodes() if n.vendor == "intel"]
         if nodes and not nodes[0].writable:
             return (
                 f"{nodes[0].path} is not writable by this user. "
                 "Run: sudo usermod -aG render $USER, then log out and back in."
             )
-        return "Run `ccn-transcribe doctor` to separate driver problems from plugin ones."
+        return "Run `audio-scribe doctor` to separate driver problems from plugin ones."
 
     def transcribe(
         self, pcm: npt.NDArray[np.float32], request: TranscribeRequest

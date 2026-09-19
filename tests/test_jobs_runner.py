@@ -6,16 +6,16 @@ from typing import TYPE_CHECKING, ClassVar
 
 import pytest
 
-from ccn_transcribe import errors, paths
-from ccn_transcribe.backends import registry
-from ccn_transcribe.backends.base import ToolchainStatus, TranscribeRequest
-from ccn_transcribe.config import RunConfig
-from ccn_transcribe.jobs import runner, store
-from ccn_transcribe.jobs.plan import Stage, Verdicts
-from ccn_transcribe.jobs.state import Artifact, ArtifactStatus, JobState
-from ccn_transcribe.jobs.verify import Verdict
-from ccn_transcribe.stages import download as download_stage
-from ccn_transcribe.transcript import Segment, TranscriptResult
+from audio_scribe import errors, paths
+from audio_scribe.backends import registry
+from audio_scribe.backends.base import ToolchainStatus, TranscribeRequest
+from audio_scribe.config import RunConfig
+from audio_scribe.jobs import runner, store
+from audio_scribe.jobs.plan import Stage, Verdicts
+from audio_scribe.jobs.state import Artifact, ArtifactStatus, JobState
+from audio_scribe.jobs.verify import Verdict
+from audio_scribe.stages import download as download_stage
+from audio_scribe.transcript import Segment, TranscriptResult
 
 if TYPE_CHECKING:
     from pathlib import Path
